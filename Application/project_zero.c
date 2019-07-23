@@ -50,6 +50,7 @@
 #include <string.h>
 
 #include "labs.h"
+#include "common.h"
 
 //#define xdc_runtime_Log_DISABLE_ALL 1  // Add to disable logs from this file
 
@@ -77,12 +78,16 @@
 #include "Board.h"
 #include "project_zero.h"
 
-// Bluetooth Developer Studio services
+// TI provided services
 #include "led_service.h"
 #include "button_service.h"
 #include "data_service.h"
+
+// Custom services
 #include "lss_service.h"
+#include "lss_handler.h"
 #include "als_service.h"
+#include "als_handler.h"
 
 /*********************************************************************
  * CONSTANTS
@@ -133,55 +138,6 @@
 #define CONNECTION_EVENT_REGISTRATION_CAUSE(registerCause) (connectionEventRegisterCauseBitMap & registerCause )
 
 /*********************************************************************
- * TYPEDEFS
- */
-// Types of messages that can be sent to the user application task from other
-// tasks or interrupts. Note: Messages from BLE Stack are sent differently.
-typedef enum
-{
-  APP_MSG_SERVICE_WRITE = 0,   /* A characteristic value has been written     */
-  APP_MSG_SERVICE_CFG,         /* A characteristic configuration has changed  */
-  APP_MSG_UPDATE_CHARVAL,      /* Request from ourselves to update a value    */
-  APP_MSG_GAP_STATE_CHANGE,    /* The GAP / connection state has changed      */
-  APP_MSG_BUTTON_DEBOUNCED,    /* A button has been debounced with new value  */
-  APP_MSG_SEND_PASSCODE,       /* A pass-code/PIN is requested during pairing */
-  APP_MSG_PRZ_CONN_EVT,        /* Connection Event finished report            */
-} app_msg_types_t;
-
-// Struct for messages sent to the application task
-typedef struct
-{
-  Queue_Elem       _elem;
-  app_msg_types_t  type;
-  uint8_t          pdu[];
-} app_msg_t;
-
-// Struct for messages about characteristic data
-typedef struct
-{
-  uint16_t svcUUID; // UUID of the service
-  uint16_t dataLen; //
-  uint8_t  paramID; // Index of the characteristic
-  uint8_t  data[];  // Flexible array member, extended to malloc - sizeof(.)
-} char_data_t;
-
-// Struct for message about sending/requesting passcode from peer.
-typedef struct
-{
-  uint16_t connHandle;
-  uint8_t  uiInputs;
-  uint8_t  uiOutputs;
-  uint32   numComparison;
-} passcode_req_t;
-
-// Struct for message about button state
-typedef struct
-{
-  PIN_Id   pinId;
-  uint8_t  state;
-} button_state_t;
-
-/*********************************************************************
  * LOCAL VARIABLES
  */
 
@@ -220,11 +176,10 @@ static uint8_t advertData[] =
   GAP_ADTYPE_FLAGS,
   DEFAULT_DISCOVERABLE_MODE | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
 
-  // complete name
-  16,
-  GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-  'P', 'r', 'o', 'j', 'e', 'c', 't', ' ', 'Z', 'e', 'r', 'o', ' ','R','2',
-
+  // Local name
+ 16,
+ GAP_ADTYPE_LOCAL_NAME_COMPLETE,
+ 'P', 'r', 'o', 'j', 'e', 'c', 't', ' ', 'Z', 'e', 'r', 'o', ' ','R','2',
 };
 
 // GAP GATT Attributes
@@ -312,11 +267,11 @@ static void user_ButtonService_CfgChangeHandler(char_data_t *pCharData);
 static void user_DataService_ValueChangeHandler(char_data_t *pCharData);
 static void user_DataService_CfgChangeHandler(char_data_t *pCharData);
 //
-#ifdef LAB_2        // LAB_2 - Service configuration
-static void user_LssService_ValueChangeHandler(char_data_t *pCharData);
-static void user_AlsService_ValueChangeHandler(char_data_t *pCharData);
-static void user_AlsService_CfgChangeHandler(char_data_t *pCharData);
-#endif /* LAB_2 */
+//#ifdef LAB_2        // LAB_2 - Service configuration
+//static void user_LssService_ValueChangeHandler(char_data_t *pCharData);
+//static void user_AlsService_ValueChangeHandler(char_data_t *pCharData);
+//static void user_AlsService_CfgChangeHandler(char_data_t *pCharData);
+//#endif /* LAB_2 */
 
 // Task handler for sending notifications.
 static void user_updateCharVal(char_data_t *pCharData);
@@ -328,8 +283,6 @@ static void user_enqueueCharDataMsg(app_msg_types_t appMsgType, uint16_t connHan
                                     uint8_t *pValue, uint16_t len);
 static void buttonCallbackFxn(PIN_Handle handle, PIN_Id pinId);
 
-static char *Util_convertArrayToHexString(uint8_t const *src, uint8_t src_len,
-                                          uint8_t *dst, uint8_t dst_len);
 #if defined(UARTLOG_ENABLE)
 static char *Util_getLocalNameStr(const uint8_t *data);
 #endif
@@ -387,14 +340,16 @@ static DataServiceCBs_t user_Data_ServiceCBs =
 // The type LssServiceCBs_t is defined in lss_service.h
 static LssServiceCBs_t user_Lss_ServiceCBs =
 {
-  // Add application callbacks here
+ .pfnChangeCb    = user_service_ValueChangeCB, // Characteristic value change callback handler
+ .pfnCfgChangeCb = NULL, // No notification-/indication enabled chars in LED Service
 };
 
 // Ambient Light Service callback handler.
 // The type AlsServiceCBs_t is defined in als_service.h
 static AlsServiceCBs_t user_Als_ServiceCBs =
 {
-  // Add application callbacks here
+ .pfnChangeCb    = user_service_ValueChangeCB, // Characteristic value change callback handler
+ .pfnCfgChangeCb = user_service_CfgChangeCB, // Noti/ind configuration callback handler
 };
 
 #endif /* LAB_2 */
@@ -555,6 +510,14 @@ static void ProjectZero_init(void)
   Clock_construct(&button1DebounceClock, buttonDebounceSwiFxn,
                   50 * (1000/Clock_tickPeriod),
                   &clockParams);
+#ifdef LAB_3        // LED String Driver Implementation
+  lss_Hardware_Init();
+  als_Hardware_Init();
+#endif
+
+#ifdef LAB_5        // LAB_5 - Analogue Input
+  als_Hardware_Init();
+#endif
 
   // ******************************************************************
   // BLE Stack initialization
@@ -663,7 +626,7 @@ static void ProjectZero_init(void)
   ButtonService_AddService( selfEntity );
   DataService_AddService( selfEntity );
 #ifdef LAB_2        // LAB_2 - Service configuration
-  // Add LSS and ALS services here
+  // Add services here
 #endif /* LAB_2 */
 
   // Register callbacks with the generated services that
@@ -672,7 +635,7 @@ static void ProjectZero_init(void)
   ButtonService_RegisterAppCBs( &user_Button_ServiceCBs );
   DataService_RegisterAppCBs( &user_Data_ServiceCBs );
 #ifdef LAB_2        // LAB_2 - Service configuration
-  // Register app callbacks here
+  // REgister App callbacks here
 #endif /* LAB_2 */
 
   // Placeholder variable for characteristic initialization
@@ -807,7 +770,12 @@ static void user_processApplicationMessage(app_msg_t *pMsg)
       /* Call different handler per service */
       switch(pCharData->svcUUID) {
 #ifdef LAB_2        // LAB_2 - Service configuration
-      // Add call to value change handler here
+      case LSS_SERVICE_SERV_UUID:
+          user_LssService_ValueChangeHandler(pCharData);
+          break;
+      case ALS_SERVICE_SERV_UUID:
+          user_AlsService_ValueChangeHandler(pCharData);
+          break;
 #endif /* LAB_2 */
       case LED_SERVICE_SERV_UUID:
           user_LedService_ValueChangeHandler(pCharData);
@@ -823,7 +791,9 @@ static void user_processApplicationMessage(app_msg_t *pMsg)
       /* Call different handler per service */
       switch(pCharData->svcUUID) {
 #ifdef LAB_2    // LAB_2 - Service configuration
-      // Add call to config change handler here
+      case ALS_SERVICE_SERV_UUID:
+          user_AlsService_CfgChangeHandler(pCharData);
+          break;
 #endif /* LAB_2 */
       case BUTTON_SERVICE_SERV_UUID:
         user_ButtonService_CfgChangeHandler(pCharData);
@@ -1204,156 +1174,6 @@ void user_DataService_CfgChangeHandler(char_data_t *pCharData)
       break;
   }
 }
-
-#ifdef LAB_2        // LAB_2 - Service configuration
-/*
- * @brief   Handle a write request sent from a peer device.
- *
- *          Invoked by the Task based on a message received from a callback.
- *
- *          When we get here, the request has already been accepted by the
- *          service and is valid from a BLE protocol perspective as well as
- *          having the correct length as defined in the service implementation.
- *
- * @param   pCharData  pointer to malloc'd char write data
- *
- * @return  None.
- */
-void user_LssService_ValueChangeHandler(char_data_t *pCharData)
-{
-  static uint8_t pretty_data_holder[16]; // 5 bytes as hex string "AA:BB:CC:DD:EE"
-  Util_convertArrayToHexString(pCharData->data, pCharData->dataLen,
-                               pretty_data_holder, sizeof(pretty_data_holder));
-
-  switch (pCharData->paramID)
-  {
-    case LSS_OFFON_ID:
-      Log_info3("Value Change msg: %s %s: %s",
-                (IArg)"LSS Service",
-                (IArg)"OFFON",
-                (IArg)pretty_data_holder);
-
-      // Do something useful with pCharData->data here
-      // -------------------------
-      break;
-
-    case LSS_RGB_ID:
-      Log_info3("Value Change msg: %s %s: %s",
-                (IArg)"LSS Service",
-                (IArg)"RGB",
-                (IArg)pretty_data_holder);
-
-      // Do something useful with pCharData->data here
-      // -------------------------
-      break;
-
-  default:
-    return;
-  }
-}
-
-/*
- * @brief   Handle a write request sent from a peer device.
- *
- *          Invoked by the Task based on a message received from a callback.
- *
- *          When we get here, the request has already been accepted by the
- *          service and is valid from a BLE protocol perspective as well as
- *          having the correct length as defined in the service implementation.
- *
- * @param   pCharData  pointer to malloc'd char write data
- *
- * @return  None.
- */
-
-void user_AlsService_ValueChangeHandler(char_data_t *pCharData)
-{
-  static uint8_t pretty_data_holder[16]; // 5 bytes as hex string "AA:BB:CC:DD:EE"
-  Util_convertArrayToHexString(pCharData->data, pCharData->dataLen,
-                               pretty_data_holder, sizeof(pretty_data_holder));
-
-  switch (pCharData->paramID)
-  {
-    case ALS_LMTHRESH_ID:
-      Log_info3("Value Change msg: %s %s: %s",
-                (IArg)"ALS Service",
-                (IArg)"LMTHRESH",
-                (IArg)pretty_data_holder);
-
-      // Do something useful with pCharData->data here
-      // -------------------------
-      break;
-
-    case ALS_LMHYST_ID:
-      Log_info3("Value Change msg: %s %s: %s",
-                (IArg)"ALS Service",
-                (IArg)"LMHYST",
-                (IArg)pretty_data_holder);
-
-      // Do something useful with pCharData->data here
-      // -------------------------
-      break;
-
-    case ALS_LMOFFON_ID:
-      Log_info3("Value Change msg: %s %s: %s",
-                (IArg)"ALS Service",
-                (IArg)"LMOFFON",
-                (IArg)pretty_data_holder);
-
-      // Do something useful with pCharData->data here
-      // -------------------------
-      break;
-
-  default:
-    return;
-  }
-}
-
-/*
- * @brief   Handle a CCCD (configuration change) write received from a peer
- *          device. This tells us whether the peer device wants us to send
- *          Notifications or Indications.
- *
- * @param   pCharData  pointer to malloc'd char write data
- *
- * @return  None.
- */
-void user_AlsService_CfgChangeHandler(char_data_t *pCharData)
-{
-#if defined(UARTLOG_ENABLE)
-  // Cast received data to uint16, as that's the format for CCCD writes.
-  uint16_t configValue = *(uint16_t *)pCharData->data;
-  char *configValString;
-
-  // Determine what to tell the user
-  switch(configValue)
-  {
-  case GATT_CFG_NO_OPERATION:
-    configValString = "Noti/Ind disabled";
-    break;
-  case GATT_CLIENT_CFG_NOTIFY:
-    configValString = "Notifications enabled";
-    break;
-  case GATT_CLIENT_CFG_INDICATE:
-    configValString = "Indications enabled";
-    break;
-  }
-#endif
-  switch (pCharData->paramID)
-  {
-    case ALS_LUMIN_ID:
-      Log_info3("CCCD Change msg: %s %s: %s",
-                (IArg)"Ambient Light Service",
-                (IArg)"LUMIN",
-                (IArg)configValString);
-      // -------------------------
-      // Do something useful with configValue here. It tells you whether someone
-      // wants to know the state of this characteristic.
-      // ...
-      break;
-  }
-}
-#endif /* LAB_2 */
 
 /*
  * @brief   Process an incoming BLE stack message.
@@ -1927,7 +1747,7 @@ static void user_updateCharVal(char_data_t *pCharData)
  *
  * @return  array as string
  */
-static char *Util_convertArrayToHexString(uint8_t const *src, uint8_t src_len,
+char *Util_convertArrayToHexString(uint8_t const *src, uint8_t src_len,
                                           uint8_t *dst, uint8_t dst_len)
 {
   char        hex[] = "0123456789ABCDEF";

@@ -80,6 +80,8 @@ extern "C"
  */
 extern void ProjectZero_createTask(void);
 
+char *Util_convertArrayToHexString(uint8_t const *src, uint8_t src_len,
+                                          uint8_t *dst, uint8_t dst_len);
 
 /*********************************************************************
 *********************************************************************/

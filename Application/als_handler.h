@@ -1,5 +1,5 @@
 /******************************************************************************
- * Filename:       labs.h
+ * Filename:       als_handler.h
  *
  * Description:    This file contains the configuration
  *              definitions and prototypes for the iOS Workshop
@@ -36,8 +36,8 @@
  *
  *****************************************************************************/
 
-#ifndef APPLICATION_LABS_H_
-#define APPLICATION_LABS_H_
+#ifndef APPLICATION_ALS_HANDLER_H
+#define APPLICATION_ALS_HANDLER_H
 
 #ifdef __cplusplus
 extern "C"
@@ -51,39 +51,26 @@ extern "C"
 /*********************************************************************
  * CONSTANTS
  */
-// Lab source include definitions
-//
-// Un-comment sections as required. Note that earlier sections must be included prior to
-// later sections. E.g. for Lab 3, LAB_1_INCLUDE and LAB_2_INCLUDE must be included
-//
-// Note that there is no #define for Lab 0 - unnecessary
-// Lab 0 - Hardware test, Compile test
-//
-//#define     LAB_1       // Un-comment to include source for Lab 1 - Apple Interoperability
-#ifdef      LAB_1
-//#define     LAB_2       // Un-comment to include source for Lab 2 - Service Configuration
-#ifdef      LAB_2
-//#define     LAB_3       // Un-comment to include source for Lab 3 - LED String Driver Implementation
-#ifdef      LAB_3
-//#define     LAB_4       // Un-comment to include source for Lab 4 - Non-Volatile Memory
-#ifdef      LAB_4
-//#define     LAB_5       // Un-comment to include source for Lab 5 - Light Monitor implementation
-#ifdef      LAB_5
-//#define     LAB_6       // Un-comment to include source for Lab 6 - Random Fader Implementation
-#ifdef      LAB_6
-//#define     LAB_7       // Un-comment to include source for Lab 7 - Pairing and Bonding
-#ifdef      LAB_7
-#endif /* LAB_7 */
-#endif /* LAB_6 */
-#endif /* LAB_5 */
-#endif /* LAB_4 */
-#endif /* LAB_3 */
-#endif /* LAB_2 */
-#endif /* LAB_1 */
+
+// 100 Lux == well lit room; 1000 Lux = daylight, 10000 Lux = direct bright sunlight
+// For a 10K resistor:
+//  - 100 Lux = digital code of 476
+//  - maximum Lux value = 660
+// ADC has an internal voltage reference of 4.3V; ALS has supply voltage of 3.3V
+// Maximum ADC reading is 3.3/4.3 * 4095 = 3142
+// Resistor value can be adjusted to accommodate different Lux ranges
+#define ADC_MULTIPLIER                  100
+#define ADC_DIVISOR                     476
 
 /*********************************************************************
  * TYPEDEFS
  */
+//
+// Ambient Light Sensor characteristics
+// -------
+// LUMIN characteristic
+typedef uint16_t lumin_char_t;
+
 
 /*********************************************************************
  * MACROS
@@ -93,14 +80,13 @@ extern "C"
 /*********************************************************************
  * FUNCTIONS
  */
-
-
-/*
- * api_function_name - purpose
- *
- *    parameters
- */
-
+//
+// ALS Handler entry points
+void user_AlsService_ValueChangeHandler(char_data_t *pCharData);
+void user_AlsService_CfgChangeHandler(char_data_t *pCharData);
+void als_Hardware_Init();
+void als_Resource_Init();
+void als_ProcessPeriodicEvent();
 
 /*********************************************************************
 *********************************************************************/
@@ -110,4 +96,4 @@ extern "C"
 #endif
 
 
-#endif /* APPLICATION_LABS_H_ */
+#endif /* APPLICATION_ALS_HANDLER_H */

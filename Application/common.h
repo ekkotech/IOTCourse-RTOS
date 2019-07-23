@@ -39,6 +39,14 @@
 /*********************************************************************
  * INCLUDES
  */
+#include "labs.h"
+
+#include <ti/sysbios/knl/Task.h>
+#include <ti/sysbios/knl/Event.h>
+#include <ti/sysbios/knl/Queue.h>
+#include <ti/sysbios/knl/Clock.h>
+
+#include <ti/drivers/PIN.h>
 
 /*********************************************************************
  * CONSTANTS
@@ -67,6 +75,56 @@
  * MACROS
  */
 #define member_size(type, member) sizeof(((type *)0)->member)
+
+/*********************************************************************
+ * TYPEDEFS
+ */
+// Types of messages that can be sent to the user application task from other
+// tasks or interrupts. Note: Messages from BLE Stack are sent differently.
+typedef enum
+{
+  APP_MSG_SERVICE_WRITE = 0,   /* A characteristic value has been written     */
+  APP_MSG_SERVICE_CFG,         /* A characteristic configuration has changed  */
+  APP_MSG_UPDATE_CHARVAL,      /* Request from ourselves to update a value    */
+  APP_MSG_GAP_STATE_CHANGE,    /* The GAP / connection state has changed      */
+  APP_MSG_BUTTON_DEBOUNCED,    /* A button has been debounced with new value  */
+  APP_MSG_SEND_PASSCODE,       /* A pass-code/PIN is requested during pairing */
+  APP_MSG_PRZ_CONN_EVT,        /* Connection Event finished report            */
+} app_msg_types_t;
+
+// Struct for messages sent to the application task
+typedef struct
+{
+  Queue_Elem       _elem;
+  app_msg_types_t  type;
+  uint8_t          pdu[];
+} app_msg_t;
+
+// Struct for messages about characteristic data
+typedef struct
+{
+  uint16_t svcUUID; // UUID of the service
+  uint16_t dataLen; //
+  uint8_t  paramID; // Index of the characteristic
+  uint8_t  data[];  // Flexible array member, extended to malloc - sizeof(.)
+} char_data_t;
+
+// Struct for message about sending/requesting passcode from peer.
+typedef struct
+{
+  uint16_t connHandle;
+  uint8_t  uiInputs;
+  uint8_t  uiOutputs;
+  uint32_t   numComparison;
+} passcode_req_t;
+
+// Struct for message about button state
+typedef struct
+{
+  PIN_Id   pinId;
+  uint8_t  state;
+} button_state_t;
+
 
 /*********************************************************************
  * FUNCTIONS
