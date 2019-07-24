@@ -111,8 +111,8 @@ extern "C"
 #define SSI_NUM_CHANNELS                2
 #define SSI_CHANNEL_0                   0
 #define SSI_CHANNEL_1                   1
-#define SSI_CHANNEL_0_OUTPUT_PIN        IOID_21                 // Defined in ../source/ti/devices/cc26x0r2/driverlib/ioc.h
-#define SSI_CHANNEL_1_OUTPUT_PIN        IOID_22                 // Defined in ../source/ti/devices/cc26x0r2/driverlib/ioc.h
+#define SSI_CHANNEL_0_DIO_NUM           IOID_21                 // Defined in ../source/ti/devices/cc26x0r2/driverlib/ioc.h
+#define SSI_CHANNEL_1_DIO_NUM           IOID_22                 // Defined in ../source/ti/devices/cc26x0r2/driverlib/ioc.h
 #define SSI_CHANNEL_0_PORT_ID           IOC_PORT_MCU_SSI0_TX    // Defined in ../source/ti/devices/cc26x0r2/driverlib/ioc.h
 #define SSI_CHANNEL_1_PORT_ID           IOC_PORT_MCU_SSI1_TX    // Defined in ../source/ti/devices/cc26x0r2/driverlib/ioc.h
 #define SSI_TX_BUFFER_SIZE              8                       // 8 x 16-bit values
