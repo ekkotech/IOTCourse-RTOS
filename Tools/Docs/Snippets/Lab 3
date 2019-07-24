@@ -53,8 +53,6 @@
 /*** End ***/
 
 /*** Insert into dmaCompleteHwiFxn ***/
-    // Clear RX interrupts (defensive - we don't use RX but clear anyway)
-    // TODO: no point doing this - remove
     // Disable SSI DMA
     HWREG(SSI0_BASE + SSI_O_DMACR) &= ~SSI_DMACR_TXDMAE_M;
     HWREG(SSI1_BASE + SSI_O_DMACR) &= ~SSI_DMACR_TXDMAE_M;
