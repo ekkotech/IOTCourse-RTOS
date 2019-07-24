@@ -12,6 +12,7 @@
         // Set up I/O
         // Set up the output pin for each channel
         temp = HWREG(IOC_BASE + (ssi[idx].ioid * sizeof(uint32_t))) & ~(IOC_IOCFG0_PULL_CTL_M | IOC_IOCFG0_IOCURR_M | IOC_IOCFG0_PORT_ID_M);
+        //temp = HWREG(IOC_BASE + (ssi[idx].ioid * sizeof(uint32_t))) & ~IOC_IOCFG0_PULL_CTL_M;
         temp |= (IOC_IOCFG0_PULL_CTL_DWN | IOC_IOCFG0_IOCURR_4MA | ssi[idx].portId);
         HWREG(IOC_BASE + (ssi[idx].ioid * sizeof(uint32_t))) = temp;
         // Enable output
