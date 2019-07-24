@@ -512,7 +512,6 @@ static void ProjectZero_init(void)
                   &clockParams);
 #ifdef LAB_3        // LED String Driver Implementation
   lss_Hardware_Init();
-  als_Hardware_Init();
 #endif
 
 #ifdef LAB_5        // LAB_5 - Analogue Input
