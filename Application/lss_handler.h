@@ -116,8 +116,8 @@ extern "C"
 #define SSI_CHANNEL_0_PORT_ID           IOC_PORT_MCU_SSI0_TX    // Defined in ../source/ti/devices/cc26x0r2/driverlib/ioc.h
 #define SSI_CHANNEL_1_PORT_ID           IOC_PORT_MCU_SSI1_TX    // Defined in ../source/ti/devices/cc26x0r2/driverlib/ioc.h
 #define SSI_TX_BUFFER_SIZE              8                       // 8 x 16-bit values
-#define SSI_SRC_CLOCK_DIV_2             2                       // Source clock of 48MHz prescaled to 24MHz
-#define SSI_CLOCK_DIVISOR               6                       // Pre-scaled clock further divided by (6 + 1) = 3.43MHz
+#define SSI_CLOCK_PRESCALE_DIV_2        2                       // Source clock of 48MHz prescaled to 24MHz
+#define SSI_CLOCK_DIV_6                 6                       // Pre-scaled clock further divided by (6 + 1) = 3.43MHz
 #define SSI_INTERRUPT_NONE              0
 //
 #define SSI_WAIT_ON_TX_EMPTY_DELAY      40                      // Slightly longer than it takes to clock out a full SSI buffer (37us)

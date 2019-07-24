@@ -6,9 +6,9 @@
         // Disable SSI channel
         HWREG(ssi[idx].chAdr + SSI_O_CR1) &= ~(SSI_CR1_SSE_M);
         // Set clock pre-scaler to 2 (divides the system clock by 2 to 24MHz)
-        HWREG(ssi[idx].chAdr + SSI_O_CPSR) = SSI_SRC_CLOCK_DIV_2;
+        HWREG(ssi[idx].chAdr + SSI_O_CPSR) = SSI_CLOCK_PRESCALE_DIV_2;
         // Configure clock divisor, frame format, data width
-        HWREG(ssi[idx].chAdr + SSI_O_CR0) = ((SSI_CLOCK_DIVISOR << SSI_CR0_SCR_S) | SSI_CR0_FRF_TI_SYNC_SERIAL | SSI_CR0_DSS_16_BIT);
+        HWREG(ssi[idx].chAdr + SSI_O_CR0) = ((SSI_CLOCK_DIV_6 << SSI_CR0_SCR_S) | SSI_CR0_FRF_TI_SYNC_SERIAL | SSI_CR0_DSS_16_BIT);
 
         // Set up I/O
         // Set up the output pin for each channel
