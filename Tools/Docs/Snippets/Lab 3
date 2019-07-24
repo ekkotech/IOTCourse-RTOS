@@ -3,8 +3,7 @@
  /*** Insert into initSSI function ***/
 
    for (uint8_t idx = 0; idx < SSI_NUM_CHANNELS; ++idx) {
-        // Disable SSI channel
-        //HWREG(ssi[idx].chAdr + SSI_O_CR1) &= ~(SSI_CR1_SSE_M);
+        // SSI channels are disabled by default after reset
         // Set clock pre-scaler to 2 (divides the system clock by 2 to 24MHz)
         HWREG(ssi[idx].chAdr + SSI_O_CPSR) = SSI_CLOCK_PRESCALE_DIV_2;
         // Configure clock divisor, frame format, data width
