@@ -65,15 +65,15 @@
 
     // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
     uint32_t control;
-    ssi0ControlBlock.pvSrcEndAddr = (volatile uint32_t *)(&bitStream[(NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1]);
-    ssi0ControlBlock.pvDstEndAddr = (volatile uint32_t *)(SSI0_BASE + SSI_O_DR);
+    ssi0ControlBlock.pvSrcEndAddr = (uint32_t *)(&bitStream[(NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1]);
+    ssi0ControlBlock.pvDstEndAddr = (uint32_t *)(SSI0_BASE + SSI_O_DR);
     // Get current control word and mask off relevant bits
     control = (ssi0ControlBlock.ui32Control & ~(DMA_CONTROL_WORD_M));
     control |= (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4 | UDMA_MODE_BASIC);
     ssi0ControlBlock.ui32Control = control;
 
-    ssi1ControlBlock.pvSrcEndAddr = (volatile uint32_t *)(&bitStream[(NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1]) ;
-    ssi1ControlBlock.pvDstEndAddr = (volatile uint32_t *)(SSI1_BASE + SSI_O_DR);
+    ssi1ControlBlock.pvSrcEndAddr = (uint32_t *)(&bitStream[(NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1]) ;
+    ssi1ControlBlock.pvDstEndAddr = (uint32_t *)(SSI1_BASE + SSI_O_DR);
     control = (ssi1ControlBlock.ui32Control & ~(DMA_CONTROL_WORD_M));
     control |= (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4 | UDMA_MODE_BASIC);
     ssi1ControlBlock.ui32Control = control;
