@@ -137,7 +137,8 @@ extern "C"
 #define DMA_MAX_NUM_CHANNELS            18      // Only require space up to DMA channel 17 (SSI1); alternate table not required
 //
 // Masks, shifts
-#define UDMA_NEXT_USEBURST_M            UDMA_NEXT_USEBURST      // Redefine for consistency ../source/ti/26x0r2/driverlib/udma.h
+// UDMA defines in ../source/ti/26x0r2/driverlib/udma.h
+#define UDMA_NEXT_USEBURST_M            UDMA_NEXT_USEBURST      // Redefine for consistency
 #define DMA_CONTROL_WORD_M              (UDMA_DST_INC_M | UDMA_SRC_INC_M | UDMA_SIZE_M | UDMA_ARB_M | UDMA_NEXT_USEBURST_M | UDMA_MODE_M)
 
 //
