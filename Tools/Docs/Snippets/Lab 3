@@ -24,6 +24,38 @@
 
 /*** End ***/
 
+/*** initDMA guidance comments only ***/
+    // Disable all channels before making changes
+    
+    // Enable the uDMA peripheral
+    
+    // Set the base address of the uDMA control table at 0x2000_0400 - mask lower bits as a precaution
+    
+
+    // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
+    
+    
+    
+    // Get current control word and mask off relevant bits
+    
+    
+    
+
+    // Repeat the control block for SSI1
+    // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
+    
+    
+    
+    // Get current control word and mask off relevant bits
+    
+    
+    
+
+    // Create Hwi
+    // Only need a Hwi for SSI channel 1
+    
+/*** End ***/
+
 /*** Insert into initDMA function ***/
     // Disable all channels before making changes
     HWREG(UDMA0_BASE + UDMA_O_CLEARCHANNELEN) = DMA_ALL_CHANNELS_M;
