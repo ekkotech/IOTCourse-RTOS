@@ -785,7 +785,7 @@ static void writeLeds(Semaphore_Handle handle, uint16_t timeout) {
                 // Ensure that both SSI channels have completed any prior send
                 // Add an additional delay to ensure the the 80us reset time for the SK6812 LEDs is met
                 waitOnSsiSendComplete();
-                Task_sleep(SSI_DELAY_100us / Clock_tickPeriod);    // TODO: Can this delay be folded into ws_WaitOnSsiSendSomplete ??
+                Task_sleep(SSI_DELAY_100us / Clock_tickPeriod); 
             }
             else
             {
