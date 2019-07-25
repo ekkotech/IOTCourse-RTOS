@@ -96,16 +96,6 @@ extern "C"
 #define BLUE_MASK_S                 8
 #define WHITE_MASK_S                0
 
-//
-// SSI related
-// SSI Event pend config
-//
-// TOD: REmove - not needed
-//#define w_SSI0_INTERRUPT_VECTOR       INT_SSI0_COMB
-//#define w_SSI0_INTERRUPT_S            (INT_SSI0_COMB - 16)        // Number of bits of left shift in registers
-//#define w_SSI1_INTERRUPT_VECTOR       INT_SSI1_COMB
-//#define w_SSI1_INTERRUPT_S            (INT_SSI1_COMB - 16)        // Number of bits of left shift in registers
-//
 // SSI channel configuration
 //
 #define SSI_NUM_CHANNELS                2
@@ -129,26 +119,26 @@ extern "C"
 //
 // uDMA related
 //
-#define DMA_ERROR_INTERRUPT_NUMBER  25
-#define DMA_ERROR_INTERRUPT_VECTOR  41
-#define DMA_CONFIG_BASE_ADDR        0x20000400
-#define DMA_CONFIG_SSI0_ADDR        0x20000440
-#define DMA_CONFIG_SSI1_ADDR        0x20000510
-#define DMA_NUM_CHANNELS            2
-#define DMA_CHANNEL_4               4
-#define DMA_CHANNEL_17              17
-#define DMA_CHANNEL_SSI0            DMA_CHANNEL_4
-#define DMA_CHANNEL_SSI1            DMA_CHANNEL_17
-#define DMA_CHANNEL_SSI0_M          (1 << DMA_CHANNEL_4)
-#define DMA_CHANNEL_SSI1_M          (1 << DMA_CHANNEL_17)
-#define DMA_CHANNEL_SSI_BOTH_M      (DMA_CHANNEL_SSI0_M | DMA_CHANNEL_SSI1_M)
-#define DMA_ALL_CHANNELS_M          0xFFFFFFFF
-#define DMA_CONTROL_ALIGNMENT       1024
-#define DMA_MAX_NUM_CHANNELS        18      // Only require space up to DMA channel 17 (SSI1); alternate table not required
+#define DMA_ERROR_INTERRUPT_NUMBER      25
+#define DMA_ERROR_INTERRUPT_VECTOR      41
+#define DMA_CONFIG_BASE_ADDR            0x20000400
+#define DMA_CONFIG_SSI0_ADDR            0x20000440
+#define DMA_CONFIG_SSI1_ADDR            0x20000510
+#define DMA_NUM_CHANNELS                2
+#define DMA_CHANNEL_4                   4
+#define DMA_CHANNEL_17                  17
+#define DMA_CHANNEL_SSI0                DMA_CHANNEL_4
+#define DMA_CHANNEL_SSI1                DMA_CHANNEL_17
+#define DMA_CHANNEL_SSI0_M              (1 << DMA_CHANNEL_4)
+#define DMA_CHANNEL_SSI1_M              (1 << DMA_CHANNEL_17)
+#define DMA_CHANNEL_SSI_BOTH_M          (DMA_CHANNEL_SSI0_M | DMA_CHANNEL_SSI1_M)
+#define DMA_ALL_CHANNELS_M              0xFFFFFFFF
+#define DMA_CONTROL_ALIGNMENT           1024
+#define DMA_MAX_NUM_CHANNELS            18      // Only require space up to DMA channel 17 (SSI1); alternate table not required
 //
 // Masks, shifts
-#define UDMA_NEXT_USEBURST_M        UDMA_NEXT_USEBURST      // Redefine for consistency ../source/ti/26x0r2/driverlib/udma.h
-#define DMA_CONTROL_WORD_M          (UDMA_DST_INC_M | UDMA_SRC_INC_M | UDMA_SIZE_M | UDMA_ARB_M | UDMA_NEXT_USEBURST_M | UDMA_MODE_M)
+#define UDMA_NEXT_USEBURST_M            UDMA_NEXT_USEBURST      // Redefine for consistency ../source/ti/26x0r2/driverlib/udma.h
+#define DMA_CONTROL_WORD_M              (UDMA_DST_INC_M | UDMA_SRC_INC_M | UDMA_SIZE_M | UDMA_ARB_M | UDMA_NEXT_USEBURST_M | UDMA_MODE_M)
 
 //
 // Defaults
