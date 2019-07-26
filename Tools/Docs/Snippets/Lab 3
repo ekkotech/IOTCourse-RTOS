@@ -1,6 +1,15 @@
  LAB_3 - LED String Driver Implementation 
 
  /*** Insert into initSSI function ***/
+        // Disable SSI channel
+        // Set clock pre-scaler to 2 (divides the system clock by 2 to 24MHz)
+        // Configure clock divisor, frame format, data width
+
+        // Set up I/O
+        // Set up the output pin for each channel
+        // Enable output
+
+        // Enable SSI channel
 
    for (uint8_t idx = 0; idx < SSI_NUM_CHANNELS; ++idx) {
         // Disable SSI channel
@@ -25,15 +34,29 @@
 /*** End ***/
 
 /*** Insert into initDMA function ***/
+
     // Disable all channels before making changes
-    HWREG(UDMA0_BASE + UDMA_O_CLEARCHANNELEN) = DMA_ALL_CHANNELS_M;
+    // Enable the uDMA peripheral
+    // Set the base address of the uDMA control table. This is fixed at 0x2000_0400 - mask lower bits as a precaution
+
+    // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
+    // Get current control word and mask off relevant bits
+
+    // Repeat for SSI1
+
+    // Create Hwi
+    // Only need a Hwi for SSI channel 1
+
+
+   // Disable all channels before making changes
+    HWREG(UDMA0_BASE + UDMA_O_CLEARCHANNELEN) = UDMA_CLEARCHANNELEN_CHNLS_M;
     // Enable the uDMA peripheral
     HWREG(UDMA0_BASE + UDMA_O_CFG) = UDMA_CFG_MASTERENABLE_M;
     // Set the base address of the uDMA control table. This is fixed at 0x2000_0400 - mask lower bits as a precaution
     HWREG(UDMA0_BASE + UDMA_O_CTRL) = (DMA_CONFIG_BASE_ADDR & UDMA_CTRL_BASEPTR_M);
 
     // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
-    uint32_t control;
+     uint32_t control;
     ssi0ControlBlock.pvSrcEndAddr = (uint32_t *)(pBitStream + (NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1);
     ssi0ControlBlock.pvDstEndAddr = (uint32_t *)(SSI0_BASE + SSI_O_DR);
     // Get current control word and mask off relevant bits
@@ -41,6 +64,7 @@
     control |= (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4 | UDMA_MODE_BASIC);
     ssi0ControlBlock.ui32Control = control;
 
+    // Repeat for SSI1
     ssi1ControlBlock.pvSrcEndAddr = (uint32_t *)(pBitStream + (NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1);
     ssi1ControlBlock.pvDstEndAddr = (uint32_t *)(SSI1_BASE + SSI_O_DR);
     control = (ssi1ControlBlock.ui32Control & ~(DMA_CONTROL_WORD_M));
@@ -61,6 +85,11 @@
 
 /*** Insert into dmaCompleteHwiFxn ***/
     // Disable SSI DMA
+    // Clear uDMA REQDONE bits
+    // Notify task DMA done
+
+
+    // Disable SSI DMA
     HWREG(SSI0_BASE + SSI_O_DMACR) &= ~SSI_DMACR_TXDMAE_M;
     HWREG(SSI1_BASE + SSI_O_DMACR) &= ~SSI_DMACR_TXDMAE_M;
     // Clear uDMA REQDONE bits
@@ -72,8 +101,22 @@
 /*** Insert into writeLeds function ***/
 
     // Ensure that both channels are disabled before making any changes
+
+        // Configure control words
+
+        // Enable uDMA channels
+
+        // Enable SSI DMA operation
+
+
+                // Ensure that both SSI channels have completed any prior send
+                // Add an additional delay to ensure the the 80us reset time for the SK6812 LEDs is met
+
+
+    // Ensure that both channels are disabled before making any changes
     if (!(HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) & DMA_CHANNEL_SSI_BOTH_M))
     {
+        // Configure control words
         uint32_t control;
         uint32_t transferCount = (((NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1) << UDMA_XFER_SIZE_S);
         control = ssi0ControlBlock.ui32Control & ~(UDMA_XFER_SIZE_M | UDMA_MODE_M);

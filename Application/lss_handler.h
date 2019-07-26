@@ -139,7 +139,6 @@ extern "C"
 #define DMA_CHANNEL_SSI0_M              (1 << DMA_CHANNEL_4)
 #define DMA_CHANNEL_SSI1_M              (1 << DMA_CHANNEL_17)
 #define DMA_CHANNEL_SSI_BOTH_M          (DMA_CHANNEL_SSI0_M | DMA_CHANNEL_SSI1_M)
-#define DMA_ALL_CHANNELS_M              0xFFFFFFFF
 #define DMA_CONTROL_ALIGNMENT           1024
 #define DMA_MAX_NUM_CHANNELS            18      // Only require space up to DMA channel 17 (SSI1); alternate table not required
 //
