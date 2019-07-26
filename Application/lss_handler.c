@@ -92,10 +92,14 @@ static Semaphore_Params dmaCompleteSemaParams;
 static Semaphore_Struct dmaCompleteSema;
 static Semaphore_Handle hDmaCompleteSema;
 
-#pragma LOCATION(ssi0ControlBlock, DMA_CONFIG_SSI0_ADDR)
+//
+// Channel Control Descriptors (CCDs) for DMA channel 4 (SSI0) and DMA channel 17 (SSI1)
+// Type dma_config_t is defined in lss_handler.h
+#pragma LOCATION( ssi0ControlBlock, DMA_CONFIG_BASE_ADDR + (DMA_CHANNEL_SSI0 * sizeof(dma_config_t)) )
 static dma_config_t ssi0ControlBlock;
-#pragma LOCATION(ssi1ControlBlock, DMA_CONFIG_SSI1_ADDR)
+#pragma LOCATION(ssi1ControlBlock, DMA_CONFIG_BASE_ADDR + (DMA_CHANNEL_SSI1 * sizeof(dma_config_t)) )
 static dma_config_t ssi1ControlBlock;
+
 // bitStreamTable contains the bit patterns to transmit via SSI. The first half corresponds to SSI0, the second half SSI1
 // DMA writes these bit patterns directly to the SSI peripheral. The table is populated by taking each 4-bit nibble of a GRB
 // colour code and looking up the SSI bit pattern in the ledBitStream table. The SK6812 LEDs require data ordered as green, red, blue

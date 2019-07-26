@@ -129,8 +129,6 @@ extern "C"
 #define DMA_ERROR_INTERRUPT_NUMBER      25
 #define DMA_ERROR_INTERRUPT_VECTOR      41
 #define DMA_CONFIG_BASE_ADDR            0x20000400
-#define DMA_CONFIG_SSI0_ADDR            0x20000440
-#define DMA_CONFIG_SSI1_ADDR            0x20000510
 #define DMA_NUM_CHANNELS                2
 #define DMA_CHANNEL_4                   4
 #define DMA_CHANNEL_17                  17
@@ -140,7 +138,7 @@ extern "C"
 #define DMA_CHANNEL_SSI1_M              (1 << DMA_CHANNEL_17)
 #define DMA_CHANNEL_SSI_BOTH_M          (DMA_CHANNEL_SSI0_M | DMA_CHANNEL_SSI1_M)
 #define DMA_CONTROL_ALIGNMENT           1024
-#define DMA_MAX_NUM_CHANNELS            18      // Only require space up to DMA channel 17 (SSI1); alternate table not required
+
 //
 // Masks, shifts
 // UDMA defines in ../source/ti/devices/26x0r2/driverlib/udma.h
