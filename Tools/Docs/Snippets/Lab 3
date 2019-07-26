@@ -121,6 +121,8 @@
         ssi0ControlBlock.ui32Control = control;
         ssi1ControlBlock.ui32Control = control;
 
+        control = ssi1ControlBlock.ui32Control;      // Just to stop the compiler from complaining...
+
         // Enable uDMA channels
         HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) = DMA_CHANNEL_SSI_BOTH_M;
         // Enable SSI DMA operation
