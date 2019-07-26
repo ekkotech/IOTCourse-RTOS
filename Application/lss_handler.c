@@ -767,37 +767,8 @@ static void bulkUpdateLeds( led_t *pColour ) {
  */
 static void writeLeds(Semaphore_Handle handle, uint16_t timeout) {
 
-    // Ensure that both channels are disabled before making any changes
-    if (!(HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) & DMA_CHANNEL_SSI_BOTH_M))
-    {
-        uint32_t control0;
-        uint32_t control1;
-        control0 = (ssi0ControlBlock.ui32Control & ~(UDMA_XFER_SIZE_M)) | (((NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1) << UDMA_XFER_SIZE_S);
-        control1 = (ssi1ControlBlock.ui32Control & ~(UDMA_XFER_SIZE_M)) | (((NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1) << UDMA_XFER_SIZE_S);
-        ssi0ControlBlock.ui32Control = (control0 | UDMA_MODE_BASIC);
-        ssi1ControlBlock.ui32Control = (control1 | UDMA_MODE_BASIC);
+    // Add handler code here
 
-        // Enable uDMA channels
-        HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) = DMA_CHANNEL_SSI_BOTH_M;
-        // Enable SSI DMA operation
-        HWREG(SSI0_BASE + SSI_O_DMACR) |= SSI_DMACR_TXDMAE_M;
-        HWREG(SSI1_BASE + SSI_O_DMACR) |= SSI_DMACR_TXDMAE_M;
-
-        if (handle != NULL)
-        {
-            if (Semaphore_pend(handle, timeout * (MSEC_PER_SEC / Clock_tickPeriod)))
-            {
-                // Ensure that both SSI channels have completed any prior send
-                // Add an additional delay to ensure the the 80us reset time for the SK6812 LEDs is met
-                waitOnSsiSendComplete();
-                Task_sleep(SSI_DELAY_100us / Clock_tickPeriod);
-            }
-            else
-            {
-                Log_info0("Semaphore pend timeout");
-            }
-        }
-    }
 }
 #endif /* LAB_3 */
 
