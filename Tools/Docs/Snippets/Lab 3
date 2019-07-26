@@ -126,8 +126,8 @@
         // Enable uDMA channels
         HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) = DMA_CHANNEL_SSI_BOTH_M;
         // Enable SSI DMA operation
-        HWREG(SSI0_BASE + SSI_O_DMACR) |= SSI_DMACR_TXDMAE_M;
-        HWREG(SSI1_BASE + SSI_O_DMACR) |= SSI_DMACR_TXDMAE_M;
+        HWREG(SSI0_BASE + SSI_O_DMACR) |= SSI_DMACR_TXDMAE;
+        HWREG(SSI1_BASE + SSI_O_DMACR) |= SSI_DMACR_TXDMAE;
 
         if (handle != NULL)
         {
