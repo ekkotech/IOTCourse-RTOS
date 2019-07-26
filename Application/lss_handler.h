@@ -247,7 +247,18 @@ typedef struct led32 {
     uint32_t blue;
 } led32_t;
 
+//
+// LED range control
+//
+typedef struct {
+    limit_char_t red;
+    limit_char_t green;
+    limit_char_t blue;
+} led_range_t;
 
+//
+// SSI initialisation config
+//
 typedef struct {
     uint32_t    chAdr;
     uint32_t    portId;
@@ -255,7 +266,7 @@ typedef struct {
 } ssi_config_t;
 
 //
-// uDMA configuration
+// uDMA CCD config
 //
 typedef struct dma_config
 {
@@ -265,15 +276,9 @@ typedef struct dma_config
     uint32_t ui32Spare;   //!< An unused location.
 } dma_config_t;
 
-
-typedef struct {
-    limit_char_t red;
-    limit_char_t green;
-    limit_char_t blue;
-} led_range_t;
-
-
-
+//
+// Non-volatile memory config
+//
 typedef struct snv_config {
     uint8_t         offOn;
     led_t           colour;
@@ -284,7 +289,6 @@ typedef struct snv_config {
     uint8_t         lmHysteresis;
     uint8_t         lmOffOn;
 } snv_config_t;
-
 
 //
 // Fade control structures
