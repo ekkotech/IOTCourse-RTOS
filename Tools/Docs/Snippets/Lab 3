@@ -63,10 +63,8 @@
     ssi1ControlBlock.pvDstEndAddr = (uint32_t *)(SSI1_BASE + SSI_O_DR);
 
     // The control word for both channels is identical
-    uint32_t control;
-    // Get current control word and mask off relevant bits
-    control = (ssi0ControlBlock.ui32Control & ~(DMA_CONTROL_WORD_M));
-    control |= (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4 | UDMA_MODE_BASIC);
+    uint32_t control = 0;
+    control = (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4 | UDMA_MODE_BASIC);
     ssi0ControlBlock.ui32Control = control;
     ssi1ControlBlock.ui32Control = control;
 
