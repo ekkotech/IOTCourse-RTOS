@@ -65,8 +65,10 @@
     // The control word for both channels is identical
     uint32_t control = 0;
     control = (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4 | UDMA_MODE_BASIC);
-    ssi0ControlBlock.ui32Control = control;
-    ssi1ControlBlock.ui32Control = control;
+    // This bit-wise AND with zero is to force a read of each control block to keep the compiler happy
+    // Without this, the complier thinks that the control blocks are being set but not read hence wasting RAM space
+    ssi0ControlBlock.ui32Control = (ssi0ControlBlock.ui32Control & 0) | control;
+    ssi1ControlBlock.ui32Control = (ssi1ControlBlock.ui32Control & 0) | control;
 
     // Create Hwi
     // Only need a Hwi for SSI channel 1
@@ -120,8 +122,6 @@
         control |= ( transferCount | UDMA_MODE_BASIC );
         ssi0ControlBlock.ui32Control = control;
         ssi1ControlBlock.ui32Control = control;
-
-        control = ssi1ControlBlock.ui32Control;      // Just to stop the compiler from complaining...
 
         // Enable uDMA channels
         HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) = DMA_CHANNEL_SSI_BOTH_M;
