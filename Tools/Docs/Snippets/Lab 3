@@ -3,17 +3,18 @@
  /*** Insert into initSSI function ***/
 
    for (uint8_t idx = 0; idx < SSI_NUM_CHANNELS; ++idx) {
-        // SSI channels are disabled by default after reset
+        // Disable SSI channel
+        HWREG(ssi[idx].chAdr + SSI_O_CR1) &= ~(SSI_CR1_SSE_M);
         // Set clock pre-scaler to 2 (divides the system clock by 2 to 24MHz)
-        HWREG(ssi[idx].chAdr + SSI_O_CPSR) = SSI_CLOCK_PRESCALE_DIV_2;
+        HWREG(ssi[idx].chAdr + SSI_O_CPSR) = SSI_SRC_CLOCK_DIV_2;
         // Configure clock divisor, frame format, data width
-        HWREG(ssi[idx].chAdr + SSI_O_CR0) = ((SSI_CLOCK_DIV_6 << SSI_CR0_SCR_S) | SSI_CR0_FRF_TI_SYNC_SERIAL | SSI_CR0_DSS_16_BIT);
+        HWREG(ssi[idx].chAdr + SSI_O_CR0) = ((SSI_CLOCK_DIVISOR << SSI_CR0_SCR_S) | SSI_CR0_FRF_TI_SYNC_SERIAL | SSI_CR0_DSS_16_BIT);
 
-         // Set up I/O
-         // Set up the output pin for each channel
-         temp = HWREG(IOC_BASE + (ssi[idx].ioid * sizeof(uint32_t))) & ~IOC_IOCFG0_PULL_CTL_M;
-         temp |= (IOC_IOCFG0_PULL_CTL_DWN | IOC_IOCFG0_IOCURR_4MA | ssi[idx].portId);
-         HWREG(IOC_BASE + (ssi[idx].ioid * sizeof(uint32_t))) = temp;
+        // Set up I/O
+        // Set up the output pin for each channel
+        temp = HWREG(IOC_BASE + (ssi[idx].ioid * sizeof(uint32_t))) & ~(IOC_IOCFG0_PULL_CTL_M | IOC_IOCFG0_IOCURR_M | IOC_IOCFG0_PORT_ID_M);
+        temp |= (IOC_IOCFG0_PULL_CTL_DWN | IOC_IOCFG0_IOCURR_4MA | ssi[idx].portId);
+        HWREG(IOC_BASE + (ssi[idx].ioid * sizeof(uint32_t))) = temp;
         // Enable output
         HWREG(GPIO_BASE + GPIO_O_DOE31_0) |= (1 << ssi[idx].ioid);
 
@@ -23,56 +24,24 @@
 
 /*** End ***/
 
-/*** initDMA guidance comments only ***/
-    // Disable all channels before making changes
-    
-    // Enable the uDMA peripheral
-    
-    // Set the base address of the uDMA control table at 0x2000_0400 - mask lower bits as a precaution
-    
-
-    // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
-    
-    
-    
-    // Get current control word and mask off relevant bits
-    
-    
-    
-
-    // Repeat the control block for SSI1
-    // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
-    
-    
-    
-    // Get current control word and mask off relevant bits
-    
-    
-    
-
-    // Create Hwi
-    // Only need a Hwi for SSI channel 1
-    
-/*** End ***/
-
 /*** Insert into initDMA function ***/
     // Disable all channels before making changes
     HWREG(UDMA0_BASE + UDMA_O_CLEARCHANNELEN) = DMA_ALL_CHANNELS_M;
     // Enable the uDMA peripheral
     HWREG(UDMA0_BASE + UDMA_O_CFG) = UDMA_CFG_MASTERENABLE_M;
-    // Set the base address of the uDMA control table at 0x2000_0400 - mask lower bits as a precaution
+    // Set the base address of the uDMA control table. This is fixed at 0x2000_0400 - mask lower bits as a precaution
     HWREG(UDMA0_BASE + UDMA_O_CTRL) = (DMA_CONFIG_BASE_ADDR & UDMA_CTRL_BASEPTR_M);
 
     // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
     uint32_t control;
-    ssi0ControlBlock.pvSrcEndAddr = (uint32_t *)(&bitStream[(NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1]);
+    ssi0ControlBlock.pvSrcEndAddr = (uint32_t *)(pBitStream + (NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1);
     ssi0ControlBlock.pvDstEndAddr = (uint32_t *)(SSI0_BASE + SSI_O_DR);
     // Get current control word and mask off relevant bits
     control = (ssi0ControlBlock.ui32Control & ~(DMA_CONTROL_WORD_M));
     control |= (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4 | UDMA_MODE_BASIC);
     ssi0ControlBlock.ui32Control = control;
 
-    ssi1ControlBlock.pvSrcEndAddr = (uint32_t *)(&bitStream[(NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1]) ;
+    ssi1ControlBlock.pvSrcEndAddr = (uint32_t *)(pBitStream + (NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1);
     ssi1ControlBlock.pvDstEndAddr = (uint32_t *)(SSI1_BASE + SSI_O_DR);
     control = (ssi1ControlBlock.ui32Control & ~(DMA_CONTROL_WORD_M));
     control |= (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4 | UDMA_MODE_BASIC);
@@ -83,6 +52,13 @@
     Hwi_create(INT_SSI1_COMB, dmaCompleteHwiFxn, NULL, NULL);
 /*** End ***/
 
+/*** Insert into initResources function ***/
+    // DMA complete semaphore
+    dmaCompleteSemaParams.mode = Semaphore_Mode_BINARY;
+    Semaphore_construct(&dmaCompleteSema, 0, &dmaCompleteSemaParams);
+    hDmaCompleteSema = Semaphore_handle(&dmaCompleteSema);
+/*** End ***/
+
 /*** Insert into dmaCompleteHwiFxn ***/
     // Disable SSI DMA
     HWREG(SSI0_BASE + SSI_O_DMACR) &= ~SSI_DMACR_TXDMAE_M;
@@ -91,4 +67,54 @@
     HWREG(UDMA0_BASE + UDMA_O_REQDONE) = DMA_CHANNEL_SSI1_M;
     // Notify task DMA done
     Semaphore_post(hDmaCompleteSema);
+/*** End ***/
+
+/*** Insert into writeLeds function ***/
+
+    // Ensure that both channels are disabled before making any changes
+    if (!(HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) & DMA_CHANNEL_SSI_BOTH_M))
+    {
+        uint32_t control;
+        uint32_t transferCount = (((NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1) << UDMA_XFER_SIZE_S);
+        control = ssi0ControlBlock.ui32Control & ~(UDMA_XFER_SIZE_M | UDMA_MODE_M);
+        control = (control | ( transferCount | UDMA_MODE_BASIC ));
+        ssi0ControlBlock.ui32Control = control;
+        ssi1ControlBlock.ui32Control = control;
+
+        // Enable uDMA channels
+        HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) = DMA_CHANNEL_SSI_BOTH_M;
+        // Enable SSI DMA operation
+        HWREG(SSI0_BASE + SSI_O_DMACR) |= SSI_DMACR_TXDMAE_M;
+        HWREG(SSI1_BASE + SSI_O_DMACR) |= SSI_DMACR_TXDMAE_M;
+
+        if (handle != NULL)
+        {
+            if (Semaphore_pend(handle, timeout * (MSEC_PER_SEC / Clock_tickPeriod)))
+            {
+                // Ensure that both SSI channels have completed any prior send
+                // Add an additional delay to ensure the the 80us reset time for the SK6812 LEDs is met
+                waitOnSsiSendComplete();
+                Task_sleep(SSI_DELAY_100us / Clock_tickPeriod);
+            }
+            else
+            {
+                Log_info0("Semaphore pend timeout");
+            }
+        }
+    }
+/*** End ***/
+
+/*** Insert into waitOnSsiSendComplete function ***/
+    uint8_t loopCount = 0;
+
+    while (!(HWREG(SSI0_BASE + SSI_O_SR) & SSI_SR_TFE_M) & (HWREG(SSI1_BASE + SSI_O_SR) & SSI_SR_TFE_M))
+    {
+        Task_sleep(SSI_WAIT_ON_TX_EMPTY_DELAY/Clock_tickPeriod);
+        ++loopCount;
+
+        if ((loopCount * SSI_WAIT_ON_TX_EMPTY_DELAY) > SSI_MAX_DELAY)
+        {
+            break;
+        }
+    }
 /*** End ***/
