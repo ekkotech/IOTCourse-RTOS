@@ -96,6 +96,13 @@ extern "C"
 #define BLUE_MASK_S                 8
 #define WHITE_MASK_S                0
 
+//
+// Bit stream buffer location
+#define USE_GPRAM                   // Comment out to use SRAM
+#ifdef USE_GPRAM
+#define BIT_STREAM_GPRAM_BASE       (uint16_t *)0x11001000      // Top 4k of GPRAM - must be 32-bit aligned
+#endif
+
 // SSI channel configuration
 //
 #define SSI_NUM_CHANNELS                2
@@ -137,7 +144,7 @@ extern "C"
 #define DMA_MAX_NUM_CHANNELS            18      // Only require space up to DMA channel 17 (SSI1); alternate table not required
 //
 // Masks, shifts
-// UDMA defines in ../source/ti/26x0r2/driverlib/udma.h
+// UDMA defines in ../source/ti/devices/26x0r2/driverlib/udma.h
 #define UDMA_NEXT_USEBURST_M            UDMA_NEXT_USEBURST      // Redefine for consistency
 #define DMA_CONTROL_WORD_M              (UDMA_DST_INC_M | UDMA_SRC_INC_M | UDMA_SIZE_M | UDMA_ARB_M | UDMA_NEXT_USEBURST_M | UDMA_MODE_M)
 
@@ -223,8 +230,16 @@ typedef struct led {
     uint8_t green;      // Order of colours is as the SK6812 expects: G, R, B (W)
     uint8_t red;
     uint8_t blue;
-    // uint8_t white;       // Un-comment if using RGBW LEDs
 } led_t;
+// The colour layout in the bit stream buffer is 3 x 32-bit values
+typedef struct bitStreamColour
+{
+    uint32_t green;
+    uint32_t red;
+    uint32_t blue;
+
+} bitStreamColour_t;
+
 
 //
 // ledBitStream is an overlay of the bitStream array and is used for bulk updating of the bitStream array
@@ -247,10 +262,10 @@ typedef struct {
 //
 typedef struct dma_config
 {
-    volatile uint32_t *pvSrcEndAddr;   //!< The ending source address of the data transfer.
-    volatile uint32_t *pvDstEndAddr;   //!< The ending destination address of the data transfer.
-    volatile uint32_t ui32Control; //!< The channel control mode.
-    volatile uint32_t ui32Spare;   //!< An unused location.
+    uint32_t *pvSrcEndAddr;   //!< The ending source address of the data transfer.
+    uint32_t *pvDstEndAddr;   //!< The ending destination address of the data transfer.
+    uint32_t ui32Control; //!< The channel control mode.
+    uint32_t ui32Spare;   //!< An unused location.
 } dma_config_t;
 
 

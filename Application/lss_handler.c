@@ -48,6 +48,8 @@
 
 #include <ti/sysbios/knl/Semaphore.h>
 #include <ti/sysbios/family/arm/m3/Hwi.h>
+#include <ti/devices/cc26x0r2/driverlib/vims.h>
+#include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26XX.h>
 #include <driverlib/ioc.h>
 #include <driverlib/prcm.h>
@@ -106,9 +108,16 @@ static dma_config_t ssi1ControlBlock;
 //          ledBitStream[least significant nibble of blue]
 //              repeat as needed...
 // Require bitStream aligned on 4 byte boundary (32-bit aligned) for fast bulk updating
+//static uint16_t *pBitStream[NUM_LED_STRINGS] = { &bitStream[0], &bitStream[NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE] };
+
+#ifdef USE_GPRAM
+static uint16_t *pBitStream = BIT_STREAM_GPRAM_BASE;
+#else
 #pragma DATA_ALIGN ( bitStream, 4 )
 static uint16_t bitStream[NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE];
-static uint16_t *pBitStream[NUM_LED_STRINGS] = { &bitStream[0], &bitStream[NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE] };
+static uint16_t *pBitStream = (uint16_t *)&bitStream;
+#endif
+
 static const uint16_t bitPatternTable[16] = {
                                     0x8888,     // 0b1000 1000 1000 1000
                                     0x888c,     // 0b1000 1000 1000 1100
@@ -126,12 +135,12 @@ static const uint16_t bitPatternTable[16] = {
                                     0xcc8c,     // 0b1100 1100 1000 1100
                                     0xccc8,     // 0b1100 1100 1100 1000
                                     0xcccc};    // 0b1100 1100 1100 1100
-static led32_t filler;      // For bulk updating LED bit pattern buffer; populate one 32-bit item and copy (faster than byte-wise memcpy()
+static led32_t filler;      // For bulk updating LED bit pattern buffer; populate one 32-bit item and copy
 static led_t ledsOff = { .green = 0, .red = 0, .blue = 0 };     // Utility for turning LEDs off
 //
 // Flag to handle any specific processing for the first periodic event
 //
-static uint8_t isFirstRun = TRUE;
+//static uint8_t isFirstRun = TRUE;
 #endif /* LAB_3 */
 
 #ifdef LAB_4      // LAB_4 - Non-Volatile Memory
@@ -185,6 +194,11 @@ void lss_ProcessPeriodicEvent();
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
+#ifdef USE_GPRAM
+static void disableCache();
+#endif
+//static void enableCache();
+
 #ifdef LAB_2        // LAB_2 - Service Configuration
 static void processOffOnValueChange(char_data_t *pCharData);
 static void processRGBValueChange(char_data_t *pCharData);
@@ -194,7 +208,7 @@ static void processRGBValueChange(char_data_t *pCharData);
 static void initSSI();
 static void initDMA();
 static void initResources();
-static void bulkUpdateLeds(uint8_t ledStringMask, led_t *pColour);
+static void bulkUpdateLeds(led_t *pColour);
 static void writeLeds(Semaphore_Handle handle, uint16_t timeout);
 static void dmaCompleteHwiFxn(UArg arg);
 static void waitOnSsiSendComplete(void);
@@ -277,6 +291,10 @@ void user_LssService_ValueChangeHandler(char_data_t *pCharData)
  */
 void lss_Hardware_Init()
 {
+#ifdef USE_GPRAM
+    disableCache();
+#endif
+
     // Initialise SSI and DMA
     initSSI();
     initDMA();
@@ -304,11 +322,10 @@ void lss_Resource_Init()
 {
     // Initialise software resources
     initResources();
-
 }
 #endif /* LAB_3 */
 
-#ifdef LAB_4        // LAB_3 - Non-Volatile Memory
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
 /*
  * @fn      lss_ProcessPeriodicEvent
  *
@@ -328,16 +345,16 @@ void lss_ProcessPeriodicEvent()
 //    if (isFirstRun == TRUE)
 //    {
 //        // Initialise LEDs to some state
-//#ifndef LAB_4       // LAB_3 - Non-Volatile Memory
+//#ifndef LAB_4       // LAB_4 - Non-Volatile Memory
 //        led_t *pColour = &ledsOff;
 //#else
 //        led_t *pColour = snvState.offOn ? &snvState.colour : &ledsOff;
-//#endif /* LAB_3 */
-//        bulkUpdateLeds( (LED_STRING_0_M | LED_STRING_1_M), pColour );
+//#endif /* LAB_4 */
+//        bulkUpdateLeds( pColour );
 //        writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
 //        isFirstRun = FALSE;
 //    }
-//#ifdef LAB_4        // LAB_3 - Non-Volatile Memory
+//#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
 //    saveSnvState(SNV_APP_ID, sizeof(snvState), (uint8_t *)&snvState);
 //#endif /* LAB_4 */
 //
@@ -409,7 +426,7 @@ static void processOffOnValueChange(char_data_t *pCharData)
             thisColour.red = thisRgb.red;
             thisColour.blue = thisRgb.blue;
         }
-        bulkUpdateLeds((LED_STRING_0_M | LED_STRING_1_M), &thisColour);
+        bulkUpdateLeds( &thisColour );
         writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
 
     }
@@ -421,7 +438,7 @@ static void processOffOnValueChange(char_data_t *pCharData)
         switch (snvState.program)
         {
         case RGB_SLIDER:
-            bulkUpdateLeds((LED_STRING_0_M | LED_STRING_1_M), snvState.offOn == ON ? &snvState.colour : &ledsOff);
+            bulkUpdateLeds( snvState.offOn == ON ? &snvState.colour : &ledsOff );
             writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
             break;
 #ifdef LAB_6        // LAB_6 - Random Fader Implementation
@@ -433,7 +450,7 @@ static void processOffOnValueChange(char_data_t *pCharData)
             else
             {
                 stopProgram(snvState.program);
-                bulkUpdateLeds((LED_STRING_0_M | LED_STRING_1_M), &ledsOff);
+                bulkUpdateLeds( &ledsOff );
                 writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
             }
 #endif  /* LAB_6 */
@@ -464,7 +481,7 @@ static void processRGBValueChange(char_data_t *pCharData)
     {
         rgb_char_t *pRgb = (rgb_char_t *)pCharData->data;
         led_t grb = { .green = pRgb->green, .red = pRgb->red, .blue = pRgb->blue };
-        bulkUpdateLeds((LED_STRING_0_M | LED_STRING_1_M), &grb);
+        bulkUpdateLeds( &grb );
         writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
     }
 #else
@@ -475,7 +492,7 @@ static void processRGBValueChange(char_data_t *pCharData)
 
         if (snvState.offOn == ON)
         {
-            bulkUpdateLeds((LED_STRING_0_M | LED_STRING_1_M), &snvState.colour);
+            bulkUpdateLeds( &snvState.colour );
             writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
         }
     }
@@ -672,10 +689,7 @@ static void initTRNG()
 #ifdef LAB_3        // LAB_3 - LED String Driver Implementation
 static void initResources()
 {
-    // DMA complete semaphore
-    dmaCompleteSemaParams.mode = Semaphore_Mode_BINARY;
-    Semaphore_construct(&dmaCompleteSema, 0, &dmaCompleteSemaParams);
-    hDmaCompleteSema = Semaphore_handle(&dmaCompleteSema);
+    // Add initialisation code here
 
 #ifdef LAB_4        // LAB_4 - Non-volatile memory
     // Initialise characteristics
@@ -710,31 +724,22 @@ static void initResources()
  * @brief   Updates the entire LED array with the designated colour
  *
  * @discussion  bulkUpdateLeds fills the entire LED array with a single colour
- *          For speed, a 32-bit filler pattern is first created and then copied
- *          to the LED array
- *
  *
  * @param   pColour - pointer to structure containing SK6812 (GRB) format colour
  *
  * @return  none
  */
-static void bulkUpdateLeds(uint8_t ledStringMask, led_t *pColour) {
+static void bulkUpdateLeds( led_t *pColour ) {
 
-    filler.green = (bitPatternTable[pColour->green >> 4] | (bitPatternTable[pColour->green & 0x0F] << 16));
-    filler.red = (bitPatternTable[pColour->red >> 4] | (bitPatternTable[pColour->red & 0x0F] << 16));
-    filler.blue = (bitPatternTable[pColour->blue >> 4] | (bitPatternTable[pColour->blue & 0x0F] << 16));
-    uint32_t *pb;
+    bitStreamColour_t *colour = (bitStreamColour_t *)pBitStream;
+    uint8_t *colourBytes = (uint8_t *)pBitStream;
 
-    // TODO: No need to use two indices here since the LED array is contiguous
-    for (uint8_t idx = 0; idx < NUM_LED_STRINGS; ++idx) {
-        if (ledStringMask & (1 << idx)) {
-            pb = (uint32_t *)pBitStream[idx];
-            for (uint8_t jdx = 0; jdx < NUM_LEDS_PER_STRING; ++jdx) {
-                *pb++ = filler.green;
-                *pb++ = filler.red;
-                *pb++ = filler.blue;
-            }
-        }
+    colour->green = (bitPatternTable[pColour->green >> 4] | (bitPatternTable[pColour->green & 0x0F] << 16));
+    colour->red = (bitPatternTable[pColour->red >> 4] | (bitPatternTable[pColour->red & 0x0F] << 16));
+    colour->blue = (bitPatternTable[pColour->blue >> 4] | (bitPatternTable[pColour->blue & 0x0F] << 16));
+
+    for (uint8_t idx = 1; idx < (NUM_LED_STRINGS * NUM_LEDS_PER_STRING); ++idx) {
+        memcpy(colourBytes + (idx * (NUM_COLOURS * sizeof(uint32_t))), colourBytes, (NUM_COLOURS * sizeof(uint32_t)));
     }
 }
 #endif /* LAB_3 */
@@ -785,7 +790,7 @@ static void writeLeds(Semaphore_Handle handle, uint16_t timeout) {
                 // Ensure that both SSI channels have completed any prior send
                 // Add an additional delay to ensure the the 80us reset time for the SK6812 LEDs is met
                 waitOnSsiSendComplete();
-                Task_sleep(SSI_DELAY_100us / Clock_tickPeriod); 
+                Task_sleep(SSI_DELAY_100us / Clock_tickPeriod);
             }
             else
             {
@@ -810,20 +815,7 @@ static void writeLeds(Semaphore_Handle handle, uint16_t timeout) {
 static void waitOnSsiSendComplete()
 {
 
-    uint8_t loopCount = 0;
-
-    while (!(HWREG(SSI0_BASE + SSI_O_SR) & SSI_SR_TFE_M) & (HWREG(SSI1_BASE + SSI_O_SR) & SSI_SR_TFE_M))
-    {
-        Task_sleep(SSI_WAIT_ON_TX_EMPTY_DELAY/Clock_tickPeriod);
-        ++loopCount;
-
-        if ((loopCount * SSI_WAIT_ON_TX_EMPTY_DELAY) > SSI_MAX_DELAY)
-        {
-            break;
-        }
-    }
-
-    Task_sleep(SSI_DELAY_100us / Clock_tickPeriod);
+    // Insert handler code here
 
 }
 #endif /* LAB_3 */
@@ -970,7 +962,7 @@ static void checkLuminanceThreshold()
         {
             // Set LEDs off
             stopProgram(snvState.program);
-            bulkUpdateLeds((LED_STRING_0_M | LED_STRING_1_M), &ledsOff);
+            bulkUpdateLeds( &ledsOff );
             writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
         }
         isBelowLMThreshold = false;
@@ -993,7 +985,7 @@ static void startProgram(uint8_t program) {
 
     switch (program) {
     case RGB_SLIDER: {
-       bulkUpdateLeds((LED_STRING_0_M | LED_STRING_1_M), snvState.offOn == ON ? &snvState.colour : &ledsOff);
+       bulkUpdateLeds( snvState.offOn == ON ? &snvState.colour : &ledsOff );
        writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
        break;
     }
@@ -1007,12 +999,12 @@ static void startProgram(uint8_t program) {
             uint32_t seed = getTrngRandNumber();
             // Set up initial colours
             led_t filler = { .red = (seed & TRNG_RED_MASK), .green = (seed & TRNG_GREEN_MASK) >> 8, .blue = (seed & TRNG_BLUE_MASK) >> 16 };
-            bulkUpdateLeds((LED_STRING_0_M | LED_STRING_1_M), &filler);
+            bulkUpdateLeds( &filler );
             Clock_start(Clock_handle(&fadeControl.clock.clockDef));
         }
         else
         {
-            bulkUpdateLeds((LED_STRING_0_M | LED_STRING_1_M), &ledsOff);
+            bulkUpdateLeds( &ledsOff );
             writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
         }
         break;
@@ -1086,6 +1078,46 @@ static uint32_t getTrngRandNumber()
 
 }
 #endif /* LAB_6 */
+
+#ifdef USE_GPRAM
+/*********************************************************************
+* @fn      disableCache
+*
+* @brief   Disables the instruction cache and sets power constraints
+*          This prevents the device from sleeping while using GPRAM
+*
+* @param   None.
+*
+* @return  None.
+*/
+static void disableCache()
+{
+    uint_least16_t hwiKey = Hwi_disable();
+    Power_setConstraint(PowerCC26XX_SB_VIMS_CACHE_RETAIN);
+    Power_setConstraint(PowerCC26XX_NEED_FLASH_IN_IDLE);
+    VIMSModeSafeSet(VIMS_BASE, VIMS_MODE_DISABLED, true);
+    Hwi_restore(hwiKey);
+}
+#endif
+
+/*********************************************************************
+* @fn      enableCache
+*
+* @brief   Enables the instruction cache and releases power constraints
+*          Allows device to sleep again
+*
+* @param   None.
+*
+* @return  None.
+*/
+//static void enableCache()
+//{
+//    uint_least16_t hwiKey = Hwi_disable();
+//    Power_releaseConstraint(PowerCC26XX_SB_VIMS_CACHE_RETAIN);
+//    Power_releaseConstraint(PowerCC26XX_NEED_FLASH_IN_IDLE);
+//    VIMSModeSafeSet(VIMS_BASE, VIMS_MODE_ENABLED, true);
+//    Hwi_restore(hwiKey);
+//}
 
 /*********************************************************************
 *********************************************************************/
