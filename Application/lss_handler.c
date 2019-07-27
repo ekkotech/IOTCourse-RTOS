@@ -580,7 +580,6 @@ static void initSSI() {
     // Load the shadow registers for the changes to take effect
     PRCMLoadSet();
 
-    uint32_t temp;
     ssi_config_t ssi[SSI_NUM_CHANNELS] = { { .chAdr = SSI0_BASE, .portId = SSI_CHANNEL_0_PORT_ID, .ioid = SSI_CHANNEL_0_DIO_NUM },
                                            { .chAdr = SSI1_BASE, .portId = SSI_CHANNEL_1_PORT_ID, .ioid = SSI_CHANNEL_1_DIO_NUM } };
 
