@@ -1,16 +1,7 @@
  LAB_3 - LED String Driver Implementation 
 
  /*** Insert into initSSI function ***/
-        // Disable SSI channel
-        // Set clock pre-scaler to 2 (divides the system clock by 2 to 24MHz)
-        // Configure clock divisor, frame format, data width
-
-        // Set up I/O
-        // Set up the output pin for each channel
-        // Enable output
-
-        // Enable SSI channel
-
+    // Iterate over num SSI channels
    for (uint8_t idx = 0; idx < SSI_NUM_CHANNELS; ++idx) {
         // Disable SSI channel
         HWREG(ssi[idx].chAdr + SSI_O_CR1) &= ~(SSI_CR1_SSE_M);
@@ -34,20 +25,6 @@
 /*** End ***/
 
 /*** Insert into initDMA function ***/
-
-    // Disable all channels before making changes
-    // Enable the uDMA peripheral
-    // Set the base address of the uDMA control table. This is fixed at 0x2000_0400 - mask lower bits as a precaution
-
-    // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
-
-    // The control word for both channels is identical
-
-    // Get current control word and mask off relevant bits
-
-    // Create Hwi
-    // Only need a Hwi for SSI channel 1
-
 
     // Disable all channels before making changes
     HWREG(UDMA0_BASE + UDMA_O_CLEARCHANNELEN) = UDMA_CLEARCHANNELEN_CHNLS_M;
@@ -76,18 +53,13 @@
 /*** End ***/
 
 /*** Insert into initResources function ***/
-    // DMA complete semaphore
+    // Create DMA complete semaphore
     dmaCompleteSemaParams.mode = Semaphore_Mode_BINARY;
     Semaphore_construct(&dmaCompleteSema, 0, &dmaCompleteSemaParams);
     hDmaCompleteSema = Semaphore_handle(&dmaCompleteSema);
 /*** End ***/
 
 /*** Insert into dmaCompleteHwiFxn ***/
-    // Disable SSI DMA
-    // Clear uDMA REQDONE bits
-    // Notify task DMA done
-
-
     // Disable SSI DMA
     HWREG(SSI0_BASE + SSI_O_DMACR) &= ~SSI_DMACR_TXDMAE;
     HWREG(SSI1_BASE + SSI_O_DMACR) &= ~SSI_DMACR_TXDMAE;
@@ -98,19 +70,6 @@
 /*** End ***/
 
 /*** Insert into writeLeds function ***/
-
-    // Ensure that both channels are disabled before making any changes
-
-        // Configure control words
-
-        // Enable uDMA channels
-
-        // Enable SSI DMA operation
-
-
-                // Ensure that both SSI channels have completed any prior send
-                // Add an additional delay to ensure the the 80us reset time for the SK6812 LEDs is met
-
 
     // Ensure that both channels are disabled before making any changes
     if (!(HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) & DMA_CHANNEL_SSI_BOTH_M))

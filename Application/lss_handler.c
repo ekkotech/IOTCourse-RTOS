@@ -537,6 +537,14 @@ static void processRGBValueChange(char_data_t *pCharData)
 static void dmaCompleteHwiFxn(UArg arg)
 {
     // Add HwiFxn handler code here
+    // Disable SSI DMA
+    
+    
+    // Clear uDMA REQDONE bits
+    
+    // Notify task DMA done
+    
+
 }
 #endif /* LAB_3 */
 
@@ -577,6 +585,26 @@ static void initSSI() {
                                            { .chAdr = SSI1_BASE, .portId = SSI_CHANNEL_1_PORT_ID, .ioid = SSI_CHANNEL_1_DIO_NUM } };
 
     // Add initialisation code here
+    // Iterate over num SSI channels
+    
+        // Disable SSI channel
+        
+        // Set clock pre-scaler to 2 (divides the system clock by 2 to 24MHz)
+        
+        // Configure clock divisor, frame format, data width
+        
+
+        // Set up I/O
+        // Set up the output pin for each channel
+        
+        
+        
+        // Enable output
+        
+
+        // Enable SSI channel
+        
+   }
 
  }
 #endif /* LAB_3 */
@@ -606,6 +634,30 @@ static void initDMA()
     PRCMLoadSet();      // Load the shadow registers
 
     // Add initialisation code here
+    // Disable all channels before making changes
+    
+    // Enable the uDMA peripheral
+    
+    // Set the base address of the uDMA control table. This is fixed at 0x2000_0400 - mask lower bits as a precaution
+    
+
+    // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
+    
+    
+    
+    
+
+    // The control word for both channels is identical
+    
+    
+    // This bit-wise AND with zero is to force a read of each control block to keep the compiler happy
+    // Without this, the complier thinks that the control blocks are being set but not read hence wasting RAM space
+    
+    
+
+    // Create Hwi
+    // Only need a Hwi for SSI channel 1
+    
 
 }
 #endif /* LAB_3 */
@@ -694,6 +746,7 @@ static void initTRNG()
 static void initResources()
 {
     // Add initialisation code here
+    // Create DMA complete semaphore
 
 #ifdef LAB_4        // LAB_4 - Non-volatile memory
     // Initialise characteristics
