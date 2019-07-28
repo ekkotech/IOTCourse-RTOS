@@ -120,3 +120,33 @@
         }
     }
 /*** End ***/
+
+/*** Insert into processOffOnValueChange ***/
+    if ((pCharData->dataLen == sizeof(offon_char_t)))
+    {
+        led_t thisColour = ledsOff;
+        uint16_t rgbLen = sizeof(rgb_char_t);
+        rgb_char_t thisRgb;
+
+        if (*((offon_char_t *) pCharData->data))
+        {
+            LssService_GetParameter( LSS_RGB_ID, &rgbLen, &thisRgb );
+            thisColour.green = thisRgb.green;
+            thisColour.red = thisRgb.red;
+            thisColour.blue = thisRgb.blue;
+        }
+        bulkUpdateLeds( &thisColour );
+        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+
+    }
+/*** End ***/
+
+/*** Insert into processRGBValueChange ***/
+    if (pCharData->dataLen == sizeof(rgb_char_t))
+    {
+        rgb_char_t *pRgb = (rgb_char_t *) pCharData->data;
+        led_t grb = { .green = pRgb->green, .red = pRgb->red, .blue = pRgb->blue };
+        bulkUpdateLeds( &grb );
+        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+    }
+/*** End ***/

@@ -139,8 +139,9 @@ static const uint16_t bitPatternTable[16] = {
                                     0xcc8c,     // 0b1100 1100 1000 1100
                                     0xccc8,     // 0b1100 1100 1100 1000
                                     0xcccc};    // 0b1100 1100 1100 1100
-static led32_t filler;      // For bulk updating LED bit pattern buffer; populate one 32-bit item and copy
+
 static led_t ledsOff = { .green = 0, .red = 0, .blue = 0 };     // Utility for turning LEDs off
+
 //
 // Flag to handle any specific processing for the first periodic event
 //
