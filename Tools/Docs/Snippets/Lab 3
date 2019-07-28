@@ -34,7 +34,7 @@
     // Set the base address of the uDMA control table. This is fixed at 0x2000_0400 - mask lower bits as a precaution
     HWREG(UDMA0_BASE + UDMA_O_CTRL) = (DMA_CONFIG_BASE_ADDR & UDMA_CTRL_BASEPTR_M);
 
-    // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
+    // The source, destination addresses and transfer parameters for both channels do not change so we can set them up here
     ssi0ControlBlock.pvSrcEndAddr = (uint32_t *)(pBitStream + (NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1);
     ssi0ControlBlock.pvDstEndAddr = (uint32_t *)(SSI0_BASE + SSI_O_DR);
     ssi1ControlBlock.pvSrcEndAddr = (uint32_t *)(pBitStream + (NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1);
@@ -42,7 +42,7 @@
 
     // The control word for both channels is identical
     uint32_t control = 0;
-    control = (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4 | UDMA_MODE_BASIC);
+    control = (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4);
     // This bit-wise AND with zero is to force a read of each control block to keep the compiler happy
     // Without this, the complier thinks that the control blocks are being set but not read hence wasting RAM space
     ssi0ControlBlock.ui32Control = (ssi0ControlBlock.ui32Control & 0) | control;
