@@ -76,9 +76,8 @@
     if (!(HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) & DMA_CHANNEL_SSI_BOTH_M))
     {
         // Configure control words
-        uint32_t control;
         uint32_t transferCount = (((NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1) << UDMA_XFER_SIZE_S);
-        control = ssi0ControlBlock.ui32Control & ~(UDMA_XFER_SIZE_M | UDMA_MODE_M);
+        uint32_t control = ssi0ControlBlock.ui32Control & ~(UDMA_XFER_SIZE_M | UDMA_MODE_M);
         control |= ( transferCount | UDMA_MODE_BASIC );
         ssi0ControlBlock.ui32Control = control;
         ssi1ControlBlock.ui32Control = control;
