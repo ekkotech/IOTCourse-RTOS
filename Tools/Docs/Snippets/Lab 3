@@ -29,10 +29,10 @@
 
     // Disable all channels before making changes
     HWREG(UDMA0_BASE + UDMA_O_CLEARCHANNELEN) = UDMA_CLEARCHANNELEN_CHNLS_M;
-    // Enable the uDMA peripheral
-    HWREG(UDMA0_BASE + UDMA_O_CFG) = UDMA_CFG_MASTERENABLE;
     // Set the base address of the uDMA control table. This is fixed at 0x2000_0400 - mask lower bits as a precaution
     HWREG(UDMA0_BASE + UDMA_O_CTRL) = (DMA_CONFIG_BASE_ADDR & UDMA_CTRL_BASEPTR_M);
+    // Enable the uDMA peripheral
+    HWREG(UDMA0_BASE + UDMA_O_CFG) = UDMA_CFG_MASTERENABLE;
 
     // The source, destination addresses and transfer parameters for both channels do not change so we can set them up here
     ssi0ControlBlock.pvSrcEndAddr = (uint32_t *)(pBitStream + (NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1);
