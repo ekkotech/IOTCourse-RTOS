@@ -109,7 +109,8 @@
 /*** Insert into waitOnSsiSendComplete function ***/
     uint8_t loopCount = 0;
 
-    while (!(HWREG(SSI0_BASE + SSI_O_SR) & SSI_SR_TFE_M) & (HWREG(SSI1_BASE + SSI_O_SR) & SSI_SR_TFE_M))
+    while ( !(HWREGBITW(SSI0_BASE + SSI_O_SR, SSI_SR_TFE_BITN) & HWREGBITW(SSI1_BASE + SSI_O_SR, SSI_SR_TFE_BITN)))
+//    while (!(HWREG(SSI0_BASE + SSI_O_SR) & SSI_SR_TFE_M) & (HWREG(SSI1_BASE + SSI_O_SR) & SSI_SR_TFE_M))
     {
         Task_sleep(SSI_WAIT_ON_TX_EMPTY_DELAY/Clock_tickPeriod);
         ++loopCount;
