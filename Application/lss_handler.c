@@ -213,7 +213,7 @@ static void processRGBValueChange(char_data_t *pCharData);
 static void initSSI();
 static void initDMA();
 static void initResources();
-static void bulkUpdateLeds(led_t *pColour);
+static void bulkUpdateLeds(rgb_char_t *pColour);
 static void writeLeds(Semaphore_Handle handle, uint16_t timeout);
 static void dmaCompleteHwiFxn(UArg arg);
 static void waitOnSsiSendComplete(void);
@@ -479,7 +479,18 @@ static void processRGBValueChange(char_data_t *pCharData)
 {
     Log_info0("In processRGBValueChange");
 
-#ifdef LAB_3        // LAB_3 - LED String Driver Implementation
+    // Insert handler code here
+    if (pCharData->dataLen == sizeof(rgb_char_t))
+    {
+        rgb_char_t *pRgb = (rgb_char_t *) pCharData->data;
+        bulkUpdateLeds( pRgb );
+        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+    }
+    else {
+        Log_info0("Incorrect data size for RGB value change");
+    }
+
+#ifdef LAB_3x        // LAB_3 - LED String Driver Implementation
 
 #ifndef LAB_4     // LAB_4 - Non-Volatile Memory
     if (pCharData->dataLen == sizeof(rgb_char_t))
