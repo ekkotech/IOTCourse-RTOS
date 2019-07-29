@@ -47,9 +47,6 @@
     ssi0ControlBlock.ui32Control = (ssi0ControlBlock.ui32Control & 0) | control;
     ssi1ControlBlock.ui32Control = (ssi1ControlBlock.ui32Control & 0) | control;
 
-    // Create Hwi
-    // Only need a Hwi for SSI channel 1
-    Hwi_create(INT_SSI1_COMB, dmaCompleteHwiFxn, NULL, NULL);
 /*** End ***/
 
 /*** Insert into initResources function ***/
@@ -57,6 +54,11 @@
     dmaCompleteSemaParams.mode = Semaphore_Mode_BINARY;
     Semaphore_construct(&dmaCompleteSema, 0, &dmaCompleteSemaParams);
     hDmaCompleteSema = Semaphore_handle(&dmaCompleteSema);
+
+    // Create Hwi
+    // Only need a Hwi for SSI channel 1
+    Hwi_create(INT_SSI1_COMB, dmaCompleteHwiFxn, NULL, NULL);
+
 /*** End ***/
 
 /*** Insert into dmaCompleteHwiFxn ***/
