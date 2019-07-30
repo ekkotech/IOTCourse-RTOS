@@ -1,0 +1,81 @@
+/*** Code snippets for Lab 4 - Non-Volatile Memory ***/
+
+/*** Insert into project_zero_init (bottom of) ***/
+
+    // Construct the periodic clock
+    // Clock fires after an initial STARTUP_EVT_PERIOD milliseconds and every
+    // PERIODIC_EVT_PERIOD milliseconds after that
+    // Convert milliseconds to clock ticks by multiplying by (MSEC_PER_SEC / Clock_tickPeriod)
+    Clock_Params_init(&periodicClockParams);
+    periodicClockParams.arg = PRZ_PERIODIC_EVT;
+    periodicClockParams.period = PERIODIC_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod);
+    Clock_construct(&periodicClock, periodicClockTimeoutSwiFxn,
+                    STARTUP_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod), &periodicClockParams);
+    Clock_start(Clock_handle(&periodicClock));
+    
+/*** End ***/
+
+/*** Insert into initSnv ***/
+
+    uint32_t status = SUCCESS;
+
+    status = osal_snv_read(appId, len, pData);
+    if (status != SUCCESS)
+    {
+        // Most likely new firmware uploaded
+        // Get default values from characteristics; write to SNV
+        uint16_t charLen = LSS_OFFON_LEN_MIN;
+        snv_config_t *pSnv = (snv_config_t *)pData;
+        LssService_GetParameter( LSS_OFFON_ID, &charLen, &pSnv->offOn );
+        charLen = LSS_RGB_LEN_MIN;
+        LssService_GetParameter( LSS_RGB_ID, &charLen, &pSnv->colour );
+        
+        status = osal_snv_write(appId, len, pData);
+        if (status != SUCCESS)
+        {
+            Log_info0("Unable to write snvState to FLASH");
+        }
+    }
+
+/*** End ***/
+
+/*** Inert into updateSnvState ***/
+    switch (charId)
+    {
+        case LSS_OFFON_ID:
+            if (len == LSS_OFFON_LEN_MIN)
+            {
+                snvState.offOn = *((offon_char_t *)pData);
+            }
+            break;
+
+        case LSS_RGB_ID:
+            if (len == LSS_RGB_LEN_MIN)
+            {
+                snvState.colour = *((rgb_char_t *)pData);
+            }
+            break;
+        
+        default:
+            break;
+    }
+
+    snvIsDirty = true;
+
+/*** End ***/
+
+/*** Insert into saveSnvState ***/
+    //
+    // Write out snv structure to SNV if it has changed
+    //
+    if (snvIsDirty == true)
+    {
+        uint32_t status = osal_snv_write( appId, sizeof(snv_config_t), (uint8_t *)pState );
+        if (status == SUCCESS)
+        {
+            snvIsDirty = false;
+        }
+        else
+        {   Log_info0("SNV write failed");}
+    }
+/*** End ***/

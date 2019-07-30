@@ -69,7 +69,6 @@
 #include "lss_service.h"
 #include "als_service.h"
 
-
 /*********************************************************************
  * CONSTANTS
  */
@@ -123,39 +122,39 @@ static uint16_t *pBitStream = (uint16_t *)&bitStream;
 #endif
 
 static const uint16_t bitPatternTable[16] = {
-                                    0x8888,     // 0b1000 1000 1000 1000
-                                    0x888c,     // 0b1000 1000 1000 1100
-                                    0x88c8,     // 0b1000 1000 1100 1000
-                                    0x88cc,     // 0b1000 1000 1100 1100
-                                    0x8c88,     // 0b1000 1100 1000 1000
-                                    0x8c8c,     // 0b1000 1100 1000 1100
-                                    0x8cc8,     // 0b1000 1100 1100 1000
-                                    0x8ccc,     // 0b1000 1100 1100 1100
-                                    0xc888,     // 0b1100 1000 1000 1000
-                                    0xc88c,     // 0b1100 1000 1000 1100
-                                    0xc8c8,     // 0b1100 1000 1100 1000
-                                    0xc8cc,     // 0b1100 1000 1100 1100
-                                    0xcc88,     // 0b1100 1100 1000 1000
-                                    0xcc8c,     // 0b1100 1100 1000 1100
-                                    0xccc8,     // 0b1100 1100 1100 1000
-                                    0xcccc};    // 0b1100 1100 1100 1100
+                                             0x8888,   // 0b1000 1000 1000 1000
+                                             0x888c,     // 0b1000 1000 1000 1100
+                                             0x88c8,     // 0b1000 1000 1100 1000
+                                             0x88cc,     // 0b1000 1000 1100 1100
+                                             0x8c88,     // 0b1000 1100 1000 1000
+                                             0x8c8c,     // 0b1000 1100 1000 1100
+                                             0x8cc8,     // 0b1000 1100 1100 1000
+                                             0x8ccc,     // 0b1000 1100 1100 1100
+                                             0xc888,     // 0b1100 1000 1000 1000
+                                             0xc88c,     // 0b1100 1000 1000 1100
+                                             0xc8c8,     // 0b1100 1000 1100 1000
+                                             0xc8cc,     // 0b1100 1000 1100 1100
+                                             0xcc88,     // 0b1100 1100 1000 1000
+                                             0xcc8c,     // 0b1100 1100 1000 1100
+                                             0xccc8,     // 0b1100 1100 1100 1000
+                                             0xcccc };    // 0b1100 1100 1100 1100
 
-static led_t ledsOff = { .green = 0, .red = 0, .blue = 0 };     // Utility for turning LEDs off
+static rgb_char_t ledsOff = { .green = 0, .red = 0, .blue = 0 }; // Utility for turning LEDs off
 
-//
-// Flag to handle any specific processing for the first periodic event
-//
-//static uint8_t isFirstRun = TRUE;
 #endif /* LAB_3 */
 
 #ifdef LAB_4      // LAB_4 - Non-Volatile Memory
 //
+// Flag to handle any specific processing for the first periodic event
+//
+static uint8_t isFirstRun = TRUE;
+
+//
 // SNV state
 //
 static uint8_t snvIsDirty = FALSE;
-static snv_config_t snvState = { .offOn = LSS_OFFON_DEFAULT,
-                            .colour = { .red = LSS_RED_DEFAULT, .green = LSS_GREEN_DEFAULT, .blue = LSS_BLUE_DEFAULT }
-                            };
+static snv_config_t snvState = { .offOn = 0,
+                                 .colour = { .red = 0, .green = 0, .blue = 0} };
 
 #endif /* LAB_4 */
 
@@ -176,7 +175,7 @@ static fade_control_t fadeControl = { .period = FADE_DEFAULT_FADE_PERIOD, .itera
  * PUBLIC FUNCTIONS
  */
 #ifdef LAB_2        // LAB_2 - Service Configuration
-void user_LssService_ValueChangeHandler(char_data_t *pCharData);
+void user_LssService_ValueChangeHandler( char_data_t *pCharData );
 #endif /* LAB_2 */
 
 #ifdef LAB_3        // LAB_3 - LED String Driver Implementation
@@ -186,7 +185,7 @@ void lss_Resource_Init();
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
 void lss_ProcessPeriodicEvent();
-#endif
+#endif /* LAB_4 */
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -197,25 +196,25 @@ static void disableCache();
 //static void enableCache();
 
 #ifdef LAB_2        // LAB_2 - Service Configuration
-static void processOffOnValueChange(char_data_t *pCharData);
-static void processRGBValueChange(char_data_t *pCharData);
+static void processOffOnValueChange( char_data_t *pCharData );
+static void processRGBValueChange( char_data_t *pCharData );
 #endif /* LAB_2 */
 
 #ifdef LAB_3        // LAB_3 - LED String Driver Implementation
 static void initSSI();
 static void initDMA();
 static void initResources();
-static void bulkUpdateLeds(rgb_char_t *pColour);
-static void writeLeds(Semaphore_Handle handle, uint16_t timeout);
-static void dmaCompleteHwiFxn(UArg arg);
-static void waitOnSsiSendComplete(void);
+static void bulkUpdateLeds( rgb_char_t *pColour );
+static void writeLeds( Semaphore_Handle handle, uint16_t timeout );
+static void dmaCompleteHwiFxn( UArg arg );
+static void waitOnSsiSendComplete( void );
 #endif /* LAB_3 */
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-static void initSnv(uint8_t appId, uint8_t len, uint8_t *pData);
-static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData);
-static void saveSnvState(uint8_t appId, uint8_t len, uint8_t *pData);
-static void setCharacteristicsFromSnv(snv_config_t *pState);
+static void initSnv( uint8_t appId, snv_config_t *pSnvState );
+static void updateSnvState( uint8_t charId, uint16_t len, uint8_t *pData );
+static void saveSnvState( uint8_t appId, snv_config_t *pState );
+//static void setCharacteristicsFromSnv( snv_config_t *pState );
 #endif /* LAB_4 */
 
 #ifdef LAB_5        // LAB_5 - Light Monitor Implementation
@@ -254,25 +253,26 @@ static uint32_t getTrngRandNumber();
  *
  * @return  None.
  */
-void user_LssService_ValueChangeHandler(char_data_t *pCharData)
+void user_LssService_ValueChangeHandler( char_data_t *pCharData )
 {
-  static uint8_t pretty_data_holder[16]; // 5 bytes as hex string "AA:BB:CC:DD:EE"
-  Util_convertArrayToHexString(pCharData->data, pCharData->dataLen,
-                               pretty_data_holder, sizeof(pretty_data_holder));
+    static uint8_t pretty_data_holder[16]; // 5 bytes as hex string "AA:BB:CC:DD:EE"
+    Util_convertArrayToHexString( pCharData->data, pCharData->dataLen,
+                                  pretty_data_holder,
+                                  sizeof(pretty_data_holder) );
 
-  switch (pCharData->paramID)
-  {
-    case LSS_OFFON_ID:
-      processOffOnValueChange(pCharData);
-      break;
+    switch (pCharData->paramID)
+    {
+        case LSS_OFFON_ID:
+            processOffOnValueChange( pCharData );
+            break;
 
-    case LSS_RGB_ID:
-      processRGBValueChange(pCharData);
-      break;
+        case LSS_RGB_ID:
+            processRGBValueChange( pCharData );
+            break;
 
-  default:
-    return;
-  }
+        default:
+            return;
+    }
 }
 #endif /* LAB_2 */
 
@@ -295,10 +295,6 @@ void lss_Hardware_Init()
     // Initialise SSI and DMA
     initSSI();
     initDMA();
-
-#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-    initSnv(SNV_APP_ID, sizeof(snvState), (uint8_t *)&snvState);
-#endif /* LAB_4 */
 
 #ifdef LAB_6        // LAB_6 - Random Fader Implementation
     initTRNG();
@@ -337,6 +333,18 @@ void lss_ProcessPeriodicEvent()
 {
 
     Log_info0("In lss_ProcessPeriodicEvent");
+
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+    if (isFirstRun && (snvState.offOn == ON))
+    {
+        bulkUpdateLeds( &snvState.colour );
+        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+        isFirstRun = FALSE;
+    }
+    else {
+        saveSnvState( SNV_APP_ID, &snvState );
+    }
+#endif /* LAB_4 */
 
 //#ifdef LAB_3        // LAB_3 - LED String Driver Implementation
 //    if (isFirstRun == TRUE)
@@ -402,13 +410,26 @@ void lss_ProcessFadeTimeoutEvent()
  *
  * @return  None.
  */
-static void processOffOnValueChange(char_data_t *pCharData)
+static void processOffOnValueChange( char_data_t *pCharData )
 {
-    Log_info0("In processOffOnValueChange");
+    Log_info0( "In processOffOnValueChange" );
 
-#ifdef LAB_3        // LAB_3 - LED String Driver Implementation
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+    // Insert handler code here
+    if (pCharData->dataLen == sizeof(offon_char_t))
+    {
+        updateSnvState( pCharData->paramID, pCharData->dataLen, pCharData->data );
+        rgb_char_t *pColour = *((offon_char_t *)pCharData->data) == ON ? &snvState.colour : &ledsOff;
+        bulkUpdateLeds( pColour );
+        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+    }
+    else {
+        Log_info0("Invalid length for offOn data");
+    }
+#endif /* LAB_4 */
+
+#ifdef LAB_3x        // LAB_3 - LED String Driver Implementation
 #ifndef LAB_4        // LAB_4 - Non-Volatile Memory
-
 
     if ((pCharData->dataLen == sizeof(offon_char_t)))
     {
@@ -416,7 +437,7 @@ static void processOffOnValueChange(char_data_t *pCharData)
         uint16_t rgbLen = sizeof(rgb_char_t);
         rgb_char_t thisRgb;
 
-        if (*((offon_char_t *)pCharData->data))
+        if (*((offon_char_t *) pCharData->data))
         {
             LssService_GetParameter( LSS_RGB_ID, &rgbLen, &thisRgb );
             thisColour.green = thisRgb.green;
@@ -424,7 +445,7 @@ static void processOffOnValueChange(char_data_t *pCharData)
             thisColour.blue = thisRgb.blue;
         }
         bulkUpdateLeds( &thisColour );
-        writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
+        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
 
     }
 #else
@@ -434,12 +455,12 @@ static void processOffOnValueChange(char_data_t *pCharData)
 
         switch (snvState.program)
         {
-        case RGB_SLIDER:
+            case RGB_SLIDER:
             bulkUpdateLeds( snvState.offOn == ON ? &snvState.colour : &ledsOff );
             writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
             break;
 #ifdef LAB_6        // LAB_6 - Random Fader Implementation
-        case RAND_FADE:
+            case RAND_FADE:
             if (((snvState.offOn == ON) && !snvState.lmOffOn) || (snvState.lmOffOn && isBelowLMThreshold))
             {
                 startProgram(snvState.program);
@@ -467,16 +488,19 @@ static void processOffOnValueChange(char_data_t *pCharData)
  *
  * @return  none
  */
-static void processRGBValueChange(char_data_t *pCharData)
+static void processRGBValueChange( char_data_t *pCharData )
 {
-    Log_info0("In processRGBValueChange");
+    Log_info0( "In processRGBValueChange" );
 
     // Insert handler code here
     if (pCharData->dataLen == sizeof(rgb_char_t))
     {
-        rgb_char_t *pRgb = (rgb_char_t *) pCharData->data;
-        bulkUpdateLeds( pRgb );
-        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+//        rgb_char_t *pRgb = (rgb_char_t *) pCharData->data;
+        updateSnvState( pCharData->paramID, pCharData->dataLen, pCharData->data );
+        if (snvState.offOn == ON) {
+            bulkUpdateLeds( (rgb_char_t *)pCharData->data );
+            writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+        }
     }
     else {
         Log_info0("Incorrect data size for RGB value change");
@@ -487,22 +511,30 @@ static void processRGBValueChange(char_data_t *pCharData)
 #ifndef LAB_4     // LAB_4 - Non-Volatile Memory
     if (pCharData->dataLen == sizeof(rgb_char_t))
     {
-        rgb_char_t *pRgb = (rgb_char_t *)pCharData->data;
-        led_t grb = { .green = pRgb->green, .red = pRgb->red, .blue = pRgb->blue };
-        bulkUpdateLeds( &grb );
-        writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
+        rgb_char_t *pRgb = (rgb_char_t *) pCharData->data;
+        bulkUpdateLeds( pRgb );
+        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+    }
+    else {
+        Log_info0("Incorrect data size for RGB value change");
     }
 #else
     if (pCharData->dataLen == sizeof(rgb_char_t))
     {
-        led_t grb = { .green = ((rgb_char_t *)pCharData->data)->green, .red = ((rgb_char_t *)pCharData->data)->red, .blue = ((rgb_char_t *)pCharData->data)->blue };
-        updateSnvState(LSS_RGB_ID, pCharData->dataLen, (uint8_t*)&grb);
+//        led_t grb = { .green = ((rgb_char_t *)pCharData->data)->green,
+//                      .red = ((rgb_char_t *)pCharData->data)->red,
+//                      .blue = ((rgb_char_t *)pCharData->data)->blue};
+
+        updateSnvState(LSS_RGB_ID, pCharData->dataLen, &pCharData->data);
 
         if (snvState.offOn == ON)
         {
             bulkUpdateLeds( &snvState.colour );
             writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
         }
+    }
+    else {
+        Log_info0("Incorrect data size for RGB value change");
     }
 #endif /* LAB_4 */
 #endif /* LAB_3 */
@@ -538,7 +570,7 @@ static void processRGBValueChange(char_data_t *pCharData)
  * @return  none
  */
 #ifdef LAB_3        // LAB_3 - LED String Driver Implementation
-static void dmaCompleteHwiFxn(UArg arg)
+static void dmaCompleteHwiFxn( UArg arg )
 {
     // Add HwiFxn handler code here
     // Disable SSI DMA
@@ -565,21 +597,22 @@ static void dmaCompleteHwiFxn(UArg arg)
  *
  * @return  none
  */
-static void initSSI() {
+static void initSSI()
+{
 
     // Turn on power and clock for both SSI channels
-    Power_setDependency(PowerCC26XX_PERIPH_SSI0);   // Enable power & clock to SSI0
-    Power_setDependency(PowerCC26XX_PERIPH_SSI1);   // Enable power & clock to SSI1
+    Power_setDependency( PowerCC26XX_PERIPH_SSI0 ); // Enable power & clock to SSI0
+    Power_setDependency( PowerCC26XX_PERIPH_SSI1 ); // Enable power & clock to SSI1
 
     // Enable SSI0 and SSI1 for run-mode operation
-    PRCMPeripheralRunEnable(PRCM_PERIPH_SSI0);
-    PRCMPeripheralRunEnable(PRCM_PERIPH_SSI1);
+    PRCMPeripheralRunEnable( PRCM_PERIPH_SSI0 );
+    PRCMPeripheralRunEnable( PRCM_PERIPH_SSI1 );
     // Enable SSI0 and SSI1 to operate while the MCU is in sleep mode
-    PRCMPeripheralSleepEnable(PRCM_PERIPH_SSI0);
-    PRCMPeripheralSleepEnable(PRCM_PERIPH_SSI1);
+    PRCMPeripheralSleepEnable( PRCM_PERIPH_SSI0 );
+    PRCMPeripheralSleepEnable( PRCM_PERIPH_SSI1 );
     // Enable SSI0 and SSI1 to operate while the MCU in deep sleep mode
-    PRCMPeripheralDeepSleepEnable(PRCM_PERIPH_SSI0);
-    PRCMPeripheralDeepSleepEnable(PRCM_PERIPH_SSI1);
+    PRCMPeripheralDeepSleepEnable( PRCM_PERIPH_SSI0 );
+    PRCMPeripheralDeepSleepEnable( PRCM_PERIPH_SSI1 );
     // The above calls only set up shadow registers
     // Load the shadow registers for the changes to take effect
     PRCMLoadSet();
@@ -609,7 +642,7 @@ static void initSSI() {
         
    }
 
- }
+}
 #endif /* LAB_3 */
 
 #ifdef LAB_3        // LAB_3 - LED String Driver Implementation
@@ -628,12 +661,12 @@ static void initDMA()
 {
 
     // Turn on power and clock for uDMA peripheral
-    Power_setDependency(PowerCC26XX_PERIPH_UDMA);
+    Power_setDependency( PowerCC26XX_PERIPH_UDMA );
 
     // Enable uDMA in run mode, sleep and deep sleep
-    PRCMPeripheralRunEnable(PRCM_PERIPH_UDMA);
-    PRCMPeripheralSleepEnable(PRCM_PERIPH_UDMA);
-    PRCMPeripheralDeepSleepEnable(PRCM_PERIPH_UDMA);
+    PRCMPeripheralRunEnable( PRCM_PERIPH_UDMA );
+    PRCMPeripheralSleepEnable( PRCM_PERIPH_UDMA );
+    PRCMPeripheralDeepSleepEnable( PRCM_PERIPH_UDMA );
     PRCMLoadSet();      // Load the shadow registers
 
     // Add initialisation code here
@@ -656,10 +689,6 @@ static void initDMA()
     // This bit-wise AND with zero is to force a read of each control block to keep the compiler happy
     // Without this, the complier thinks that the control blocks are being set but not read hence wasting RAM space
     
-    
-
-    // Create Hwi
-    // Only need a Hwi for SSI channel 1
     
 
 }
@@ -687,21 +716,9 @@ static void initDMA()
  *
  * @return  none
  */
-static void initSnv(uint8_t appId, uint8_t len, uint8_t *pData)
+static void initSnv(uint8_t appId, snv_config_t *pSnvState)
 {
-
-    uint32_t status = SUCCESS;
-
-    status = osal_snv_read(appId, len, pData);
-    if (status != SUCCESS)
-    {
-        // Most likely new firmware uploaded; write default snvState to SNV
-        status = osal_snv_write(appId, len, pData);
-        if (status != SUCCESS)
-        {
-            Log_info0("Unable to write snvState to FLASH");
-        }
-    }
+    // Add initialisation code here
 
 }
 #endif /* LAB_4 */
@@ -719,14 +736,15 @@ static void initSnv(uint8_t appId, uint8_t len, uint8_t *pData)
 static void initTRNG()
 {
 
-     Power_setDependency(PowerCC26XX_PERIPH_TRNG);   // Enable power & clock to TRNG
+    Power_setDependency(PowerCC26XX_PERIPH_TRNG); // Enable power & clock to TRNG
 
     // Reset the module
     HWREG(TRNG_BASE + TRNG_O_SWRESET) = 1;
     // Wait for reset to complete
-    while (HWREG(TRNG_BASE + TRNG_O_SWRESET) > 0) { }
+    while (HWREG(TRNG_BASE + TRNG_O_SWRESET) > 0)
+    {}
 
-    TRNGConfigure(0, 256, 0);     // Min samples = max samples, max samples = 2^8, sample every clock
+    TRNGConfigure(0, 256, 0); // Min samples = max samples, max samples = 2^8, sample every clock
     // Enable the TRNG
     HWREGBITW(TRNG_BASE + TRNG_O_CTL, TRNG_CTL_TRNG_EN_BITN) = 1;
 
@@ -751,20 +769,22 @@ static void initResources()
     // Add initialisation code here
     // Create DMA complete semaphore
 
+    // Create Hwi
+    // Only need a Hwi for SSI channel 1
+ 
 #ifdef LAB_4        // LAB_4 - Non-volatile memory
-    // Initialise characteristics
-    setCharacteristicsFromSnv(&snvState);
+    initSnv(SNV_APP_ID, &snvState);
 #endif /* LAB_4 */
 
 #ifdef LAB_6        // LAB_6 - Random Fader Implementation
-  // Create the clock for the fader
-  Clock_Params_init(&fadeControl.clock.clockParams);
-  fadeControl.clock.clockParams.arg = PRZ_FADE_TIMEOUT_EVT;
-  // Initialise to default timeout
-  // Timeout is in clock ticks (256 iterations per period; clock tick is 10us)
-  Clock_construct(&fadeControl.clock.clockDef, fadeTimeoutSwiFxn,
-                ((FADE_DEFAULT_FADE_PERIOD * USEC_PER_SEC) / FADE_NUM_ITERATIONS) / Clock_tickPeriod,
-                &fadeControl.clock.clockParams);
+    // Create the clock for the fader
+    Clock_Params_init(&fadeControl.clock.clockParams);
+    fadeControl.clock.clockParams.arg = PRZ_FADE_TIMEOUT_EVT;
+    // Initialise to default timeout
+    // Timeout is in clock ticks (256 iterations per period; clock tick is 10us)
+    Clock_construct(&fadeControl.clock.clockDef, fadeTimeoutSwiFxn,
+            ((FADE_DEFAULT_FADE_PERIOD * USEC_PER_SEC) / FADE_NUM_ITERATIONS) / Clock_tickPeriod,
+            &fadeControl.clock.clockParams);
 #endif /* LAB_6 */
 
 }
@@ -789,17 +809,20 @@ static void initResources()
  *
  * @return  none
  */
-static void bulkUpdateLeds( led_t *pColour ) {
+static void bulkUpdateLeds( rgb_char_t *pColour )
+{
 
-    bitStreamColour_t *colour = (bitStreamColour_t *)pBitStream;
-    uint8_t *colourBytes = (uint8_t *)pBitStream;
+    bitStreamColour_t *colour = (bitStreamColour_t *) pBitStream;
+    uint8_t *colourBytes = (uint8_t *) pBitStream;
 
     colour->green = (bitPatternTable[pColour->green >> 4] | (bitPatternTable[pColour->green & 0x0F] << 16));
     colour->red = (bitPatternTable[pColour->red >> 4] | (bitPatternTable[pColour->red & 0x0F] << 16));
     colour->blue = (bitPatternTable[pColour->blue >> 4] | (bitPatternTable[pColour->blue & 0x0F] << 16));
 
-    for (uint8_t idx = 1; idx < (NUM_LED_STRINGS * NUM_LEDS_PER_STRING); ++idx) {
-        memcpy(colourBytes + (idx * (NUM_COLOURS * sizeof(uint32_t))), colourBytes, (NUM_COLOURS * sizeof(uint32_t)));
+    for (uint8_t idx = 1; idx < (NUM_LED_STRINGS * NUM_LEDS_PER_STRING); ++idx)
+    {
+        memcpy( colourBytes + (idx * (NUM_COLOURS * sizeof(uint32_t))),
+                colourBytes, (NUM_COLOURS * sizeof(uint32_t)) );
     }
 }
 #endif /* LAB_3 */
@@ -825,7 +848,8 @@ static void bulkUpdateLeds( led_t *pColour ) {
  *
  * @return  none
  */
-static void writeLeds(Semaphore_Handle handle, uint16_t timeout) {
+static void writeLeds( Semaphore_Handle handle, uint16_t timeout )
+{
 
     // Add handler code here
 
@@ -857,7 +881,7 @@ static void waitOnSsiSendComplete()
  *
  * @brief   Updates an element in snvState and sets dirty flag true
  *
- * @param   chard - the characteristic ID
+ * @param   charId - the characteristic ID
  * @param   len - the number of bytes to write
  * @param   pData - pointer to the source data
  *
@@ -865,38 +889,25 @@ static void waitOnSsiSendComplete()
  */
 static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
 {
+    // Insert handler code here
     switch (charId)
     {
-     case LSS_OFFON_ID:
-        if (len == sizeof(uint8_t)) {
-            snvState.offOn = *pData;
-        }
-        break;
-    case LSS_RGB_ID:
-        if (len == sizeof(led_t)) {
-            snvState.colour.green = ((led_t*)pData)->green;
-            snvState.colour.red = ((led_t*)pData)->red;
-            snvState.colour.blue = ((led_t*)pData)->blue;
-        }
-        break;
-        // Move these to ALS Service
-//    case LSS_LMTHRESH_ID:
-//        if (len == sizeof(uint16_t)) {
-//            snvState.lmThreshold = *((uint16_t*)pData);
-//        }
-//        break;
-//    case LSS_LMHYST_ID:
-//        if (len == sizeof(uint8_t)) {
-//            snvState.lmHysteresis = *pData;
-//        }
-//        break;
-//    case LSS_LMOFFON_ID:
-//        if (len == sizeof(uint8_t)) {
-//            snvState.lmOffOn = *pData;
-//        }
-//        break;
-    default:
-        break;
+        case LSS_OFFON_ID:
+            if (len == LSS_OFFON_LEN_MIN)
+            {
+                snvState.offOn = *((offon_char_t *)pData);
+            }
+            break;
+
+        case LSS_RGB_ID:
+            if (len == LSS_RGB_LEN_MIN)
+            {
+                snvState.colour = *((rgb_char_t *)pData);
+            }
+            break;
+
+        default:
+            break;
     }
 
     snvIsDirty = true;
@@ -917,18 +928,22 @@ static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
  *
  * @return  none
  */
-static void saveSnvState(uint8_t appId, uint8_t len, uint8_t *pData)
+static void saveSnvState( uint8_t appId, snv_config_t *pState )
 {
 
+    // Insert handelr code here
     //
     // Write out snv structure to SNV if it has changed
     //
-    if (snvIsDirty == true) {
-        uint32_t status = osal_snv_write(appId, len, pData);
-        if (status == SUCCESS) {
+    if (snvIsDirty == true)
+    {
+        uint32_t status = osal_snv_write( appId, sizeof(snv_config_t), (uint8_t *)pState );
+        if (status == SUCCESS)
+        {
             snvIsDirty = false;
         }
-        else { Log_info0("SNV write failed"); }
+        else
+        {   Log_info0("SNV write failed");}
     }
 
 }
@@ -944,19 +959,21 @@ static void saveSnvState(uint8_t appId, uint8_t len, uint8_t *pData)
  *
  * @return  none
  */
-static void setCharacteristicsFromSnv(snv_config_t *pState) {
-
-    LedStringService_SetParameter(LSS_OFFON_ID, member_size(snv_config_t, offOn), &snvState.offOn);
-    // Translate SK6812 GRB colour to Bluetooth RGB colour
-    rgb_char_t rgbColour = { .red = snvState.colour.red, .green = snvState.colour.green, .blue = snvState.colour.blue };
-    LedStringService_SetParameter(LSS_RGB_ID, member_size(snv_config_t, colour), &rgbColour);
-    // How to handle these??
-//    LedStringService_SetParameter(LSS_LMTHRESH_ID, member_size(snv_config_t, lmThreshold), &snvState.lmThreshold);
-//    LedStringService_SetParameter(LSS_LMHYST_ID, member_size(snv_config_t, lmHysteresis), &snvState.lmHysteresis);
-//    LedStringService_SetParameter(LSS_LMOFFON_ID, member_size(snv_config_t, lmOffOn), &snvState.lmOffOn);
-    // Set other characteristics as and when implemented
-
-}
+//static void setCharacteristicsFromSnv(snv_config_t *pState)
+//{
+//
+//    LedStringService_SetParameter(LSS_OFFON_ID, member_size(snv_config_t, offOn), &snvState.offOn);
+//    // Translate SK6812 GRB colour to Bluetooth RGB colour
+//    rgb_char_t rgbColour =
+//    {   .red = snvState.colour.red, .green = snvState.colour.green, .blue = snvState.colour.blue};
+//    LedStringService_SetParameter(LSS_RGB_ID, member_size(snv_config_t, colour), &rgbColour);
+//    // How to handle these??
+////    LedStringService_SetParameter(LSS_LMTHRESH_ID, member_size(snv_config_t, lmThreshold), &snvState.lmThreshold);
+////    LedStringService_SetParameter(LSS_LMHYST_ID, member_size(snv_config_t, lmHysteresis), &snvState.lmHysteresis);
+////    LedStringService_SetParameter(LSS_LMOFFON_ID, member_size(snv_config_t, lmOffOn), &snvState.lmOffOn);
+//    // Set other characteristics as and when implemented
+//
+//}
 #endif /* LAB_4 */
 
 #ifdef LAB_5        // LAB_5 - Light Monitor implementation
@@ -980,7 +997,8 @@ static void checkLuminanceThreshold()
     if ( currentValue <= snvState.lmThreshold && !isBelowLMThreshold )
     {
         // Light level has fallen below lower threshold
-        if ( snvState.offOn && snvState.lmOffOn) {
+        if ( snvState.offOn && snvState.lmOffOn)
+        {
             // Set LEDs on
             startProgram(snvState.program);
         }
@@ -1012,36 +1030,41 @@ static void checkLuminanceThreshold()
  * @return  none
  */
 #ifdef LAB_5        // LAB_5 - Light Monitor Implementation
-static void startProgram(uint8_t program) {
+static void startProgram(uint8_t program)
+{
 
-    switch (program) {
-    case RGB_SLIDER: {
-       bulkUpdateLeds( snvState.offOn == ON ? &snvState.colour : &ledsOff );
-       writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
-       break;
-    }
-#ifdef LAB_6        // LAB_6 - Random Fader Implementation
-    case RAND_FADE: {
-        // If snvState.offOn == ON, get initial seed from TRNG, start timer
-        // If snvState == OFF, switch off LEDs
-        if (snvState.offOn == ON)
+    switch (program)
+    {
+        case RGB_SLIDER:
         {
-            fadeControl.iterationCount = 0;
-            uint32_t seed = getTrngRandNumber();
-            // Set up initial colours
-            led_t filler = { .red = (seed & TRNG_RED_MASK), .green = (seed & TRNG_GREEN_MASK) >> 8, .blue = (seed & TRNG_BLUE_MASK) >> 16 };
-            bulkUpdateLeds( &filler );
-            Clock_start(Clock_handle(&fadeControl.clock.clockDef));
-        }
-        else
-        {
-            bulkUpdateLeds( &ledsOff );
+            bulkUpdateLeds( snvState.offOn == ON ? &snvState.colour : &ledsOff );
             writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
+            break;
         }
-        break;
-    }
+#ifdef LAB_6        // LAB_6 - Random Fader Implementation
+        case RAND_FADE:
+        {
+            // If snvState.offOn == ON, get initial seed from TRNG, start timer
+            // If snvState == OFF, switch off LEDs
+            if (snvState.offOn == ON)
+            {
+                fadeControl.iterationCount = 0;
+                uint32_t seed = getTrngRandNumber();
+                // Set up initial colours
+                led_t filler =
+                {   .red = (seed & TRNG_RED_MASK), .green = (seed & TRNG_GREEN_MASK) >> 8, .blue = (seed & TRNG_BLUE_MASK) >> 16};
+                bulkUpdateLeds( &filler );
+                Clock_start(Clock_handle(&fadeControl.clock.clockDef));
+            }
+            else
+            {
+                bulkUpdateLeds( &ledsOff );
+                writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
+            }
+            break;
+        }
 #endif /* LAB_6 */
-    default:
+        default:
         Log_info0("WARNING: lssStartProgram: Invalid program id");
         break;
     }
@@ -1058,19 +1081,21 @@ static void startProgram(uint8_t program) {
  * @return  none
  */
 #ifdef LAB_5        // LAB_5 - Light Monitor Implementation
-static void stopProgram(uint8_t program) {
+static void stopProgram(uint8_t program)
+{
 
-    switch (program) {
-    case RGB_SLIDER:
+    switch (program)
+    {
+        case RGB_SLIDER:
         // Nothing needed here
         break;
 #ifdef LAB_6        // LAB_6 - Random Fader Implementation
-    case RAND_FADE:
+        case RAND_FADE:
         // Just stopping the clock will leave the LEDs in a lit state
         Clock_stop(Clock_handle(&fadeControl.clock.clockDef));
         break;
 #endif /* LAB_6 */
-    default:
+        default:
         Log_info0("WARNING: lssStopProgram: Invalid program id");
         break;
     }
@@ -1095,13 +1120,15 @@ static uint32_t getTrngRandNumber()
     static uint32_t filler;
     uint32_t lowRand;
 
-    if ((HWREG(TRNG_BASE + TRNG_O_IRQFLAGSTAT) & TRNG_NUMBER_READY) != 0) {
+    if ((HWREG(TRNG_BASE + TRNG_O_IRQFLAGSTAT) & TRNG_NUMBER_READY) != 0)
+    {
         // Get the low 32-bits of the random number
         lowRand = HWREG(TRNG_BASE + TRNG_O_OUT0);
         // Kick off generation of a new number
         HWREG(TRNG_BASE + TRNG_O_IRQFLAGCLR) = 0x1;
     }
-    else {
+    else
+    {
         lowRand = ++filler;
     }
 
@@ -1112,35 +1139,35 @@ static uint32_t getTrngRandNumber()
 
 #ifdef USE_GPRAM
 /*********************************************************************
-* @fn      disableCache
-*
-* @brief   Disables the instruction cache and sets power constraints
-*          This prevents the device from sleeping while using GPRAM
-*
-* @param   None.
-*
-* @return  None.
-*/
+ * @fn      disableCache
+ *
+ * @brief   Disables the instruction cache and sets power constraints
+ *          This prevents the device from sleeping while using GPRAM
+ *
+ * @param   None.
+ *
+ * @return  None.
+ */
 static void disableCache()
 {
     uint_least16_t hwiKey = Hwi_disable();
-    Power_setConstraint(PowerCC26XX_SB_VIMS_CACHE_RETAIN);
-    Power_setConstraint(PowerCC26XX_NEED_FLASH_IN_IDLE);
-    VIMSModeSafeSet(VIMS_BASE, VIMS_MODE_DISABLED, true);
+    Power_setConstraint( PowerCC26XX_SB_VIMS_CACHE_RETAIN );
+    Power_setConstraint( PowerCC26XX_NEED_FLASH_IN_IDLE );
+    VIMSModeSafeSet( VIMS_BASE, VIMS_MODE_DISABLED, true );
     Hwi_restore(hwiKey);
 }
 #endif
 
 /*********************************************************************
-* @fn      enableCache
-*
-* @brief   Enables the instruction cache and releases power constraints
-*          Allows device to sleep again
-*
-* @param   None.
-*
-* @return  None.
-*/
+ * @fn      enableCache
+ *
+ * @brief   Enables the instruction cache and releases power constraints
+ *          Allows device to sleep again
+ *
+ * @param   None.
+ *
+ * @return  None.
+ */
 //static void enableCache()
 //{
 //    uint_least16_t hwiKey = Hwi_disable();
@@ -1149,6 +1176,119 @@ static void disableCache()
 //    VIMSModeSafeSet(VIMS_BASE, VIMS_MODE_ENABLED, true);
 //    Hwi_restore(hwiKey);
 //}
-
 /*********************************************************************
-*********************************************************************/
+ *
+ *     for (uint8_t idx = 0; idx < SSI_NUM_CHANNELS; ++idx)
+    {
+        // SSI channels are disabled by default after reset
+        // Set clock pre-scaler to 2 (divides the system clock by 2 to 24MHz)
+        HWREG(ssi[idx].chAdr + SSI_O_CPSR) = SSI_CLOCK_PRESCALE_DIV_2;
+        // Configure clock divisor, frame format, data width
+        HWREG(ssi[idx].chAdr + SSI_O_CR0) = ((SSI_CLOCK_DIV_6 << SSI_CR0_SCR_S) | SSI_CR0_FRF_TI_SYNC_SERIAL | SSI_CR0_DSS_16_BIT);
+
+        // Set up I/O
+        // Set up the output pin for each channel
+        uint32_t temp;
+        temp = HWREG( IOC_BASE + (ssi[idx].ioid * sizeof(uint32_t)) ) & ~IOC_IOCFG0_PULL_CTL_M;
+        temp |= (IOC_IOCFG0_PULL_CTL_DWN | IOC_IOCFG0_IOCURR_4MA | ssi[idx].portId);
+        HWREG(IOC_BASE + (ssi[idx].ioid * sizeof(uint32_t))) = temp;
+        // Enable output
+        HWREG(GPIO_BASE + GPIO_O_DOE31_0) |= (1 << ssi[idx].ioid);
+
+        // Enable SSI channel
+        HWREG(ssi[idx].chAdr + SSI_O_CR1) |= SSI_CR1_SSE;
+    }
+ *
+ *     // Disable all channels before making changes
+    HWREG(UDMA0_BASE + UDMA_O_CLEARCHANNELEN) = UDMA_CLEARCHANNELEN_CHNLS_M;
+    // Enable the uDMA peripheral
+    HWREG(UDMA0_BASE + UDMA_O_CFG) = UDMA_CFG_MASTERENABLE;
+    // Set the base address of the uDMA control table. This is fixed at 0x2000_0400 - mask lower bits as a precaution
+    HWREG(UDMA0_BASE + UDMA_O_CTRL) = (DMA_CONFIG_BASE_ADDR & UDMA_CTRL_BASEPTR_M);
+
+    // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
+    ssi0ControlBlock.pvSrcEndAddr = (uint32_t *) (pBitStream + (NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1);
+    ssi0ControlBlock.pvDstEndAddr = (uint32_t *) (SSI0_BASE + SSI_O_DR);
+    ssi1ControlBlock.pvSrcEndAddr = (uint32_t *) (pBitStream + (NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1);
+    ssi1ControlBlock.pvDstEndAddr = (uint32_t *) (SSI1_BASE + SSI_O_DR);
+
+    // The control word for both channels is identical
+    uint32_t control = 0;
+    control = (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4 | UDMA_MODE_BASIC);
+    // This bit-wise AND with zero is to force a read of each control block to keep the compiler happy
+    // Without this, the complier thinks that the control blocks are being set but not read hence wasting RAM space
+    ssi0ControlBlock.ui32Control = (ssi0ControlBlock.ui32Control & 0) | control;
+    ssi1ControlBlock.ui32Control = (ssi1ControlBlock.ui32Control & 0) | control;
+
+    // Create Hwi
+    // Only need a Hwi for SSI channel 1
+    Hwi_create( INT_SSI1_COMB, dmaCompleteHwiFxn, NULL, NULL );
+ *
+ *
+ *     // DMA complete semaphore
+    dmaCompleteSemaParams.mode = Semaphore_Mode_BINARY;
+    Semaphore_construct( &dmaCompleteSema, 0, &dmaCompleteSemaParams );
+    hDmaCompleteSema = Semaphore_handle( &dmaCompleteSema );
+ *
+ *
+ *     // Ensure that both channels are disabled before making any changes
+    if (!(HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) & DMA_CHANNEL_SSI_BOTH_M))
+    {
+        uint32_t control;
+        uint32_t transferCount = (((NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1) << UDMA_XFER_SIZE_S);
+        control = ssi0ControlBlock.ui32Control & ~(UDMA_XFER_SIZE_M | UDMA_MODE_M);
+        control |= (transferCount | UDMA_MODE_BASIC);
+        ssi0ControlBlock.ui32Control = control;
+        ssi1ControlBlock.ui32Control = control;
+
+        // Enable uDMA channels
+        HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) = DMA_CHANNEL_SSI_BOTH_M;
+        // Enable SSI DMA operation
+        HWREGBITW(SSI0_BASE + SSI_O_DMACR, SSI_DMACR_TXDMAE_BITN) = 1;
+        HWREGBITW(SSI1_BASE + SSI_O_DMACR, SSI_DMACR_TXDMAE_BITN) = 1;
+
+        if (handle != NULL)
+        {
+            if (Semaphore_pend( handle, timeout * (MSEC_PER_SEC / Clock_tickPeriod) ))
+            {
+                // Ensure that both SSI channels have completed any prior send
+                // Add an additional delay to ensure the the 80us reset time for the SK6812 LEDs is met
+                waitOnSsiSendComplete();
+                Task_sleep( SSI_DELAY_100us / Clock_tickPeriod );
+            }
+            else
+            {
+                Log_info0( "Semaphore pend timeout" );
+            }
+        }
+    }
+ *
+ *
+ *     uint8_t loopCount = 0;
+
+    while (!(HWREG(SSI0_BASE + SSI_O_SR) & SSI_SR_TFE_M)
+            & (HWREG(SSI1_BASE + SSI_O_SR) & SSI_SR_TFE_M))
+    {
+        Task_sleep( SSI_WAIT_ON_TX_EMPTY_DELAY / Clock_tickPeriod );
+        ++loopCount;
+
+        if ((loopCount * SSI_WAIT_ON_TX_EMPTY_DELAY) > SSI_MAX_DELAY)
+        {
+            break;
+        }
+    }
+ *
+ *
+ *     // Disable SSI DMA
+    HWREGBITW(SSI0_BASE + SSI_O_DMACR, SSI_DMACR_TXDMAE_BITN) = 0;
+    HWREGBITW(SSI1_BASE + SSI_O_DMACR, SSI_DMACR_TXDMAE_BITN) = 0;
+    // Clear uDMA REQDONE bits
+    HWREG(UDMA0_BASE + UDMA_O_REQDONE) = DMA_CHANNEL_SSI_BOTH_M;
+    // Notify task DMA done
+    Semaphore_post( hDmaCompleteSema );
+ *
+ *
+ *
+ *
+ *
+ *********************************************************************/

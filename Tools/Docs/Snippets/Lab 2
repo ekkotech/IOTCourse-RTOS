@@ -1,0 +1,29 @@
+/*** Code snippets for Lab 2 ***
+
+/*** In project_zero_init ***/
+/*** BLE stack intialisaiton section ***/
+
+    LssService_AddService(selfEntity);
+    AlsService_AddService(selfEntity);
+
+    LssService_RegisterAppCBs(&user_Lss_ServiceCBs);
+    AlsService_RegisterAppCBs(&user_Als_ServiceCBs);
+
+/*** End ***/
+
+/*** In user_ProcessApplicationMessage ***/
+
+                case LSS_SERVICE_SERV_UUID:
+                    user_LssService_ValueChangeHandler(pCharData);
+                    break;
+                case ALS_SERVICE_SERV_UUID:
+                    user_AlsService_ValueChangeHandler(pCharData);
+                    break;
+
+...
+
+                case ALS_SERVICE_SERV_UUID:
+                    user_AlsService_CfgChangeHandler(pCharData);
+                    break;
+
+/*** End ***/

@@ -138,7 +138,6 @@ extern "C"
 #define DMA_CHANNEL_SSI1_M              (1 << DMA_CHANNEL_17)
 #define DMA_CHANNEL_SSI_BOTH_M          (DMA_CHANNEL_SSI0_M | DMA_CHANNEL_SSI1_M)
 #define DMA_CONTROL_ALIGNMENT           1024
-
 //
 // Masks, shifts
 // UDMA defines in ../source/ti/devices/26x0r2/driverlib/udma.h
@@ -154,7 +153,7 @@ extern "C"
 //
 // Non-volatile memory related
 //
-#define SNV_APP_ID                  0x80
+#define SNV_APP_ID                      0x80
 
 //#ifdef LAB_5        // Lab 5 - Random Fader Implementation
 // Fader timing (applies to any fader - Random fade or other):
@@ -267,10 +266,10 @@ typedef struct {
 //
 typedef struct dma_config
 {
-    uint32_t *pvSrcEndAddr;   //!< The ending source address of the data transfer.
-    uint32_t *pvDstEndAddr;   //!< The ending destination address of the data transfer.
-    uint32_t ui32Control; //!< The channel control mode.
-    uint32_t ui32Spare;   //!< An unused location.
+    uint32_t *pvSrcEndAddr;     //!< The ending source address of the data transfer.
+    uint32_t *pvDstEndAddr;     //!< The ending destination address of the data transfer.
+    uint32_t ui32Control;       //!< The channel control mode.
+    uint32_t ui32Spare;         //!< An unused location.
 } dma_config_t;
 
 //
@@ -278,14 +277,9 @@ typedef struct dma_config
 //
 typedef struct snv_config {
     uint8_t         offOn;
-    led_t           colour;
-    led_range_t     range;
-    uint8_t         program;
-    uint8_t         fadePeriod;      // Fade rate for the random fade program
-    uint16_t        lmThreshold;
-    uint8_t         lmHysteresis;
-    uint8_t         lmOffOn;
+    rgb_char_t      colour;
 } snv_config_t;
+
 
 //
 // Fade control structures

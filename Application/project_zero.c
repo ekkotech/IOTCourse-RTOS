@@ -17,15 +17,15 @@
  are met:
 
  *  Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
+ notice, this list of conditions and the following disclaimer.
 
  *  Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
 
  *  Neither the name of Texas Instruments Incorporated nor the names of
-    its contributors may be used to endorse or promote products derived
-    from this software without specific prior written permission.
+ its contributors may be used to endorse or promote products derived
+ from this software without specific prior written permission.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -93,15 +93,22 @@
  * CONSTANTS
  */
 
+//
+// Periodic clock timeout definitions
+// Timeout for the first clock tick (in msec)
+#define STARTUP_EVT_PERIOD                  1000
+// How often to perform periodic event (in msec)
+#define PERIODIC_EVT_PERIOD                 5000
+
 // Advertising interval when device is discoverable (units of 625us, 160=100ms)
-#define DEFAULT_ADVERTISING_INTERVAL          160
+#define DEFAULT_ADVERTISING_INTERVAL        160
 
 // Limited discoverable mode advertises for 30.72s, and then stops
 // General discoverable mode advertises indefinitely
-#define DEFAULT_DISCOVERABLE_MODE             GAP_ADTYPE_FLAGS_GENERAL
+#define DEFAULT_DISCOVERABLE_MODE           GAP_ADTYPE_FLAGS_GENERAL
 
 // Default pass-code used for pairing.
-#define DEFAULT_PASSCODE                      000000
+#define DEFAULT_PASSCODE                    000000
 
 // Task configuration
 #define PRZ_TASK_PRIORITY                     1
@@ -156,6 +163,11 @@ static Queue_Handle hApplicationMsgQ;
 Task_Struct przTask;
 Char przTaskStack[PRZ_TASK_STACK_SIZE];
 
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+// PRZ task periodic clock
+static Clock_Struct periodicClock;
+static Clock_Params periodicClockParams;
+#endif /* LAB_4 */
 
 // GAP - SCAN RSP data (max size = 31 bytes)
 static uint8_t scanRspData[] =
@@ -188,7 +200,6 @@ static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "Project Zero R2";
 // Globals used for ATT Response retransmission
 static gattMsgEvent_t *pAttRsp = NULL;
 static uint8_t rspTxRetry = 0;
-
 
 /* Pin driver handles */
 static PIN_Handle buttonPinHandle;
@@ -234,62 +245,73 @@ Display_Handle dispHandle;
  */
 
 static void ProjectZero_init( void );
-static void ProjectZero_taskFxn(UArg a0, UArg a1);
+static void ProjectZero_taskFxn( UArg a0, UArg a1 );
 
-static void user_processApplicationMessage(app_msg_t *pMsg);
-static uint8_t ProjectZero_processStackMsg(ICall_Hdr *pMsg);
-static uint8_t ProjectZero_processGATTMsg(gattMsgEvent_t *pMsg);
+static void user_processApplicationMessage( app_msg_t *pMsg );
+static uint8_t ProjectZero_processStackMsg( ICall_Hdr *pMsg );
+static uint8_t ProjectZero_processGATTMsg( gattMsgEvent_t *pMsg );
 
-static void ProjectZero_sendAttRsp(void);
-static uint8_t ProjectZero_processGATTMsg(gattMsgEvent_t *pMsg);
-static void ProjectZero_freeAttRsp(uint8_t status);
+static void ProjectZero_sendAttRsp( void );
+static uint8_t ProjectZero_processGATTMsg( gattMsgEvent_t *pMsg );
+static void ProjectZero_freeAttRsp( uint8_t status );
 
-static void ProjectZero_connEvtCB(Gap_ConnEventRpt_t *pReport);
-static void ProjectZero_processConnEvt(Gap_ConnEventRpt_t *pReport);
+static void ProjectZero_connEvtCB( Gap_ConnEventRpt_t *pReport );
+static void ProjectZero_processConnEvt( Gap_ConnEventRpt_t *pReport );
 
-static void user_processGapStateChangeEvt(gaprole_States_t newState);
-static void user_gapStateChangeCB(gaprole_States_t newState);
-static void user_gapBondMgr_passcodeCB(uint8_t *deviceAddr, uint16_t connHandle,
-                                       uint8_t uiInputs, uint8_t uiOutputs, uint32 numComparison);
-static void user_gapBondMgr_pairStateCB(uint16_t connHandle, uint8_t state,
-                                        uint8_t status);
+static void user_processGapStateChangeEvt( gaprole_States_t newState );
+static void user_gapStateChangeCB( gaprole_States_t newState );
+static void user_gapBondMgr_passcodeCB( uint8_t *deviceAddr,
+                                        uint16_t connHandle, uint8_t uiInputs,
+                                        uint8_t uiOutputs,
+                                        uint32 numComparison );
+static void user_gapBondMgr_pairStateCB( uint16_t connHandle, uint8_t state,
+                                         uint8_t status );
 
-static void buttonDebounceSwiFxn(UArg buttonId);
-static void user_handleButtonPress(button_state_t *pState);
+static void buttonDebounceSwiFxn( UArg buttonId );
+static void user_handleButtonPress( button_state_t *pState );
 
 // Generic callback handlers for value changes in services.
-static void user_service_ValueChangeCB( uint16_t connHandle, uint16_t svcUuid, uint8_t paramID, uint8_t *pValue, uint16_t len );
-static void user_service_CfgChangeCB( uint16_t connHandle, uint16_t svcUuid, uint8_t paramID, uint8_t *pValue, uint16_t len );
+static void user_service_ValueChangeCB( uint16_t connHandle, uint16_t svcUuid,
+                                        uint8_t paramID, uint8_t *pValue,
+                                        uint16_t len );
+static void user_service_CfgChangeCB( uint16_t connHandle, uint16_t svcUuid,
+                                      uint8_t paramID, uint8_t *pValue,
+                                      uint16_t len );
 
 // Task context handlers for generated services.
-static void user_LedService_ValueChangeHandler(char_data_t *pCharData);
-static void user_ButtonService_CfgChangeHandler(char_data_t *pCharData);
-static void user_DataService_ValueChangeHandler(char_data_t *pCharData);
-static void user_DataService_CfgChangeHandler(char_data_t *pCharData);
+static void user_LedService_ValueChangeHandler( char_data_t *pCharData );
+static void user_ButtonService_CfgChangeHandler( char_data_t *pCharData );
+static void user_DataService_ValueChangeHandler( char_data_t *pCharData );
+static void user_DataService_CfgChangeHandler( char_data_t *pCharData );
 //
 //#ifdef LAB_2        // LAB_2 - Service configuration
 //static void user_LssService_ValueChangeHandler(char_data_t *pCharData);
 //static void user_AlsService_ValueChangeHandler(char_data_t *pCharData);
 //static void user_AlsService_CfgChangeHandler(char_data_t *pCharData);
 //#endif /* LAB_2 */
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+static void periodicClockTimeoutSwiFxn();
+#endif /* LAB_4 */
 
 // Task handler for sending notifications.
-static void user_updateCharVal(char_data_t *pCharData);
+static void user_updateCharVal( char_data_t *pCharData );
 
 // Utility functions
-static void user_enqueueRawAppMsg(app_msg_types_t appMsgType, uint8_t *pData, uint16_t len );
-static void user_enqueueCharDataMsg(app_msg_types_t appMsgType, uint16_t connHandle,
-                                    uint16_t serviceUUID, uint8_t paramID,
-                                    uint8_t *pValue, uint16_t len);
-static void buttonCallbackFxn(PIN_Handle handle, PIN_Id pinId);
+static void user_enqueueRawAppMsg( app_msg_types_t appMsgType, uint8_t *pData,
+                                   uint16_t len );
+static void user_enqueueCharDataMsg( app_msg_types_t appMsgType,
+                                     uint16_t connHandle, uint16_t serviceUUID,
+                                     uint8_t paramID, uint8_t *pValue,
+                                     uint16_t len );
+static void buttonCallbackFxn( PIN_Handle handle, PIN_Id pinId );
 
 #if defined(UARTLOG_ENABLE)
-static char *Util_getLocalNameStr(const uint8_t *data);
+static char *Util_getLocalNameStr( const uint8_t *data );
 #endif
 /*********************************************************************
  * EXTERN FUNCTIONS
  */
-extern void AssertHandler(uint8 assertCause, uint8 assertSubcause);
+extern void AssertHandler( uint8 assertCause, uint8 assertSubcause );
 
 /*********************************************************************
  * PROFILE CALLBACKS
@@ -366,7 +388,6 @@ typedef enum
 // Handle the registration and un-registration for the connection event, since only one can be registered.
 uint32_t connectionEventRegisterCauseBitMap = NONE_REGISTERED; // See connectionEventRegisterCause_u
 
-
 /*
  * @brief  Register to receive connection event reports for all the connections
  *
@@ -376,7 +397,7 @@ uint32_t connectionEventRegisterCauseBitMap = NONE_REGISTERED; // See connection
  */
 bStatus_t ProjectZero_RegistertToAllConnectionEvent(connectionEventRegisterCause_u connectionEventRegisterCause)
 {
-  bStatus_t status = SUCCESS;
+    bStatus_t status = SUCCESS;
 
   // In case  there is no registration for the connection event, register for report
   if (!CONNECTION_EVENT_IS_REGISTERED)
@@ -427,17 +448,17 @@ bStatus_t ProjectZero_UnRegistertToAllConnectionEvent (connectionEventRegisterCa
  *
  * @return  None.
  */
-void ProjectZero_createTask(void)
+void ProjectZero_createTask( void )
 {
-  Task_Params taskParams;
+    Task_Params taskParams;
 
-  // Configure task
-  Task_Params_init(&taskParams);
-  taskParams.stack = przTaskStack;
-  taskParams.stackSize = PRZ_TASK_STACK_SIZE;
-  taskParams.priority = PRZ_TASK_PRIORITY;
+    // Configure task
+    Task_Params_init(&taskParams);
+    taskParams.stack = przTaskStack;
+    taskParams.stackSize = PRZ_TASK_STACK_SIZE;
+    taskParams.priority = PRZ_TASK_PRIORITY;
 
-  Task_construct(&przTask, ProjectZero_taskFxn, &taskParams, NULL);
+    Task_construct(&przTask, ProjectZero_taskFxn, &taskParams, NULL);
 }
 
 /*
@@ -449,102 +470,104 @@ void ProjectZero_createTask(void)
  *
  * @return  None.
  */
-static void ProjectZero_init(void)
+static void ProjectZero_init( void )
 {
-  // ******************************************************************
-  // NO STACK API CALLS CAN OCCUR BEFORE THIS CALL TO ICall_registerApp
-  // ******************************************************************
-  // Register the current thread as an ICall dispatcher application
-  // so that the application can send and receive messages via ICall to Stack.
-  ICall_registerApp(&selfEntity, &syncEvent);
+    // ******************************************************************
+    // NO STACK API CALLS CAN OCCUR BEFORE THIS CALL TO ICall_registerApp
+    // ******************************************************************
+    // Register the current thread as an ICall dispatcher application
+    // so that the application can send and receive messages via ICall to Stack.
+    ICall_registerApp(&selfEntity, &syncEvent);
 
-  Log_info0("Initializing the user task, hardware, BLE stack and services.");
+    Log_info0("Initializing the user task, hardware, BLE stack and services.");
 
-  // Open display. By default this is disabled via the predefined symbol Display_DISABLE_ALL.
-  dispHandle = Display_open(Display_Type_UART, NULL);
+    // Open display. By default this is disabled via the predefined symbol Display_DISABLE_ALL.
+    dispHandle = Display_open(Display_Type_UART, NULL);
 
-  // Initialize queue for application messages.
-  // Note: Used to transfer control to application thread from e.g. interrupts.
-  Queue_construct(&applicationMsgQ, NULL);
-  hApplicationMsgQ = Queue_handle(&applicationMsgQ);
+    // Initialize queue for application messages.
+    // Note: Used to transfer control to application thread from e.g. interrupts.
+    Queue_construct(&applicationMsgQ, NULL);
+    hApplicationMsgQ = Queue_handle(&applicationMsgQ);
 
-  // ******************************************************************
-  // Hardware initialization
-  // ******************************************************************
+    // ******************************************************************
+    // Hardware initialization
+    // ******************************************************************
 
-  // Open LED pins
-  ledPinHandle = PIN_open(&ledPinState, ledPinTable);
-  if(!ledPinHandle) {
-    Log_error0("Error initializing board LED pins");
-    Task_exit();
-  }
+    // Open LED pins
+    ledPinHandle = PIN_open(&ledPinState, ledPinTable);
+    if (!ledPinHandle)
+    {
+        Log_error0("Error initializing board LED pins");
+        Task_exit();
+    }
 
-  buttonPinHandle = PIN_open(&buttonPinState, buttonPinTable);
-  if(!buttonPinHandle) {
-    Log_error0("Error initializing button pins");
-    Task_exit();
-  }
+    buttonPinHandle = PIN_open(&buttonPinState, buttonPinTable);
+    if (!buttonPinHandle)
+    {
+        Log_error0("Error initializing button pins");
+        Task_exit();
+    }
 
-  // Setup callback for button pins
-  if (PIN_registerIntCb(buttonPinHandle, &buttonCallbackFxn) != 0) {
-    Log_error0("Error registering button callback function");
-    Task_exit();
-  }
+    // Setup callback for button pins
+    if (PIN_registerIntCb(buttonPinHandle, &buttonCallbackFxn) != 0)
+    {
+        Log_error0("Error registering button callback function");
+        Task_exit();
+    }
 
-  // Create the debounce clock objects for Button 0 and Button 1
-  Clock_Params clockParams;
-  Clock_Params_init(&clockParams);
+    // Create the debounce clock objects for Button 0 and Button 1
+    Clock_Params clockParams;
+    Clock_Params_init(&clockParams);
 
-  // Both clock objects use the same callback, so differentiate on argument
-  // given to the callback in Swi context
-  clockParams.arg = Board_BUTTON0;
+    // Both clock objects use the same callback, so differentiate on argument
+    // given to the callback in Swi context
+    clockParams.arg = Board_BUTTON0;
 
-  // Initialize to 50 ms timeout when Clock_start is called.
-  // Timeout argument is in ticks, so convert from ms to ticks via tickPeriod.
-  Clock_construct(&button0DebounceClock, buttonDebounceSwiFxn,
-                  50 * (1000/Clock_tickPeriod),
-                  &clockParams);
+    // Initialize to 50 ms timeout when Clock_start is called.
+    // Timeout argument is in ticks, so convert from ms to ticks via tickPeriod.
+    Clock_construct(&button0DebounceClock, buttonDebounceSwiFxn,
+                    50 * (1000 / Clock_tickPeriod), &clockParams);
 
-  // Second button
-  clockParams.arg = Board_BUTTON1;
-  Clock_construct(&button1DebounceClock, buttonDebounceSwiFxn,
-                  50 * (1000/Clock_tickPeriod),
-                  &clockParams);
+    // Second button
+    clockParams.arg = Board_BUTTON1;
+    Clock_construct(&button1DebounceClock, buttonDebounceSwiFxn,
+                    50 * (1000 / Clock_tickPeriod), &clockParams);
 #ifdef LAB_3        // LED String Driver Implementation
-  lss_Hardware_Init();
+    lss_Hardware_Init();
 #endif
 
 #ifdef LAB_5        // LAB_5 - Analogue Input
-  als_Hardware_Init();
+    als_Hardware_Init();
 #endif
 
-  // ******************************************************************
-  // BLE Stack initialization
-  // ******************************************************************
+    // ******************************************************************
+    // BLE Stack initialization
+    // ******************************************************************
 
-  // Setup the GAP Peripheral Role Profile
-  uint8_t initialAdvertEnable = TRUE;  // Advertise on power-up
+    // Setup the GAP Peripheral Role Profile
+    uint8_t initialAdvertEnable = TRUE;  // Advertise on power-up
 
-  // By setting this to zero, the device will go into the waiting state after
-  // being discoverable. Otherwise wait this long [ms] before advertising again.
-  uint16_t advertOffTime = 0; // miliseconds
+    // By setting this to zero, the device will go into the waiting state after
+    // being discoverable. Otherwise wait this long [ms] before advertising again.
+    uint16_t advertOffTime = 0; // miliseconds
 
-  // Set advertisement enabled.
-  GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t),
-                       &initialAdvertEnable);
+    // Set advertisement enabled.
+    GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t),
+                         &initialAdvertEnable);
 
-  // Configure the wait-time before restarting advertisement automatically
-  GAPRole_SetParameter(GAPROLE_ADVERT_OFF_TIME, sizeof(uint16_t),
-                       &advertOffTime);
+    // Configure the wait-time before restarting advertisement automatically
+    GAPRole_SetParameter(GAPROLE_ADVERT_OFF_TIME, sizeof(uint16_t),
+                         &advertOffTime);
 
-  // Initialize Scan Response data
-  GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData), scanRspData);
+    // Initialize Scan Response data
+    GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData),
+                         scanRspData);
 
-  // Initialize Advertisement data
-  GAPRole_SetParameter(GAPROLE_ADVERT_DATA, sizeof(advertData), advertData);
+    // Initialize Advertisement data
+    GAPRole_SetParameter(GAPROLE_ADVERT_DATA, sizeof(advertData), advertData);
 
-  Log_info1("Name in advertData array: \x1b[33m%s\x1b[0m",
-            (IArg)Util_getLocalNameStr(advertData));
+    Log_info1("Name in advertData array: \x1b[33m%s\x1b[0m",
+              (IArg )Util_getLocalNameStr(advertData));
 
 #ifdef LAB_1        // Lab 1 - Apple Inter-operability
   // Override default GAP Role parameters set in peripheral.c
@@ -558,60 +581,60 @@ static void ProjectZero_init(void)
   uint16_t desiredMinInterval = dd;     // Units of 1.25ms - 75ms / 1.25ms = 60
   uint16_t desiredMaxInterval = eee;    // Units of 1.25ms - 125ms / 1.25ms = 100
 
-  // // Set the Peripheral GAPRole Parameters
-  GAPRole_SetParameter(GAPROLE_PARAM_UPDATE_ENABLE, sizeof(uint8_t),
-                       &enableUpdateRequest);
-  GAPRole_SetParameter(GAPROLE_TIMEOUT_MULTIPLIER, sizeof(uint16_t),
-                       &desiredConnTimeout);
-  GAPRole_SetParameter(GAPROLE_SLAVE_LATENCY, sizeof(uint16_t),
-                       &desiredSlaveLatency);
-  GAPRole_SetParameter(GAPROLE_MIN_CONN_INTERVAL, sizeof(uint16_t),
-                       &desiredMinInterval);
-  GAPRole_SetParameter(GAPROLE_MAX_CONN_INTERVAL, sizeof(uint16_t),
-                       &desiredMaxInterval);
+    // // Set the Peripheral GAPRole Parameters
+    GAPRole_SetParameter(GAPROLE_PARAM_UPDATE_ENABLE, sizeof(uint8_t),
+                         &enableUpdateRequest);
+    GAPRole_SetParameter(GAPROLE_TIMEOUT_MULTIPLIER, sizeof(uint16_t),
+                         &desiredConnTimeout);
+    GAPRole_SetParameter(GAPROLE_SLAVE_LATENCY, sizeof(uint16_t),
+                         &desiredSlaveLatency);
+    GAPRole_SetParameter(GAPROLE_MIN_CONN_INTERVAL, sizeof(uint16_t),
+                         &desiredMinInterval);
+    GAPRole_SetParameter(GAPROLE_MAX_CONN_INTERVAL, sizeof(uint16_t),
+                         &desiredMaxInterval);
 
   // Set advertising interval
   uint16_t advInt = fff;     // Units of 625us - 152.5ms / 0.625ms = 244
 
 #else
-  uint16_t advInt = DEFAULT_ADVERTISING_INTERVAL;
+    uint16_t advInt = DEFAULT_ADVERTISING_INTERVAL;
 #endif /* LAB_1 */
 
-  GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MIN, advInt);
-  GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MAX, advInt);
-  GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MIN, advInt);
-  GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MAX, advInt);
+    GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MIN, advInt);
+    GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MAX, advInt);
+    GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MIN, advInt);
+    GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MAX, advInt);
 
-  // Set duration of advertisement before stopping in Limited adv mode.
-  GAP_SetParamValue(TGAP_LIM_ADV_TIMEOUT, 30); // Seconds
+    // Set duration of advertisement before stopping in Limited adv mode.
+    GAP_SetParamValue(TGAP_LIM_ADV_TIMEOUT, 30); // Seconds
 
-  // ******************************************************************
-  // BLE Bond Manager initialization
-  // ******************************************************************
-  uint32_t passkey = 0; // passkey "000000"
-  uint8_t pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
-  uint8_t mitm = TRUE;
-  uint8_t ioCap = GAPBOND_IO_CAP_DISPLAY_ONLY;
-  uint8_t bonding = TRUE;
+    // ******************************************************************
+    // BLE Bond Manager initialization
+    // ******************************************************************
+    uint32_t passkey = 0; // passkey "000000"
+    uint8_t pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
+    uint8_t mitm = TRUE;
+    uint8_t ioCap = GAPBOND_IO_CAP_DISPLAY_ONLY;
+    uint8_t bonding = TRUE;
 
-  GAPBondMgr_SetParameter(GAPBOND_DEFAULT_PASSCODE, sizeof(uint32_t),
-                          &passkey);
-  GAPBondMgr_SetParameter(GAPBOND_PAIRING_MODE, sizeof(uint8_t), &pairMode);
-  GAPBondMgr_SetParameter(GAPBOND_MITM_PROTECTION, sizeof(uint8_t), &mitm);
-  GAPBondMgr_SetParameter(GAPBOND_IO_CAPABILITIES, sizeof(uint8_t), &ioCap);
-  GAPBondMgr_SetParameter(GAPBOND_BONDING_ENABLED, sizeof(uint8_t), &bonding);
+    GAPBondMgr_SetParameter(GAPBOND_DEFAULT_PASSCODE, sizeof(uint32_t),
+                            &passkey);
+    GAPBondMgr_SetParameter(GAPBOND_PAIRING_MODE, sizeof(uint8_t), &pairMode);
+    GAPBondMgr_SetParameter(GAPBOND_MITM_PROTECTION, sizeof(uint8_t), &mitm);
+    GAPBondMgr_SetParameter(GAPBOND_IO_CAPABILITIES, sizeof(uint8_t), &ioCap);
+    GAPBondMgr_SetParameter(GAPBOND_BONDING_ENABLED, sizeof(uint8_t), &bonding);
 
-  // ******************************************************************
-  // BLE Service initialization
-  // ******************************************************************
+    // ******************************************************************
+    // BLE Service initialization
+    // ******************************************************************
 
-  // Add services to GATT server
-  GGS_AddService(GATT_ALL_SERVICES);           // GAP
-  GATTServApp_AddService(GATT_ALL_SERVICES);   // GATT attributes
-  DevInfo_AddService();                        // Device Information Service
+    // Add services to GATT server
+    GGS_AddService(GATT_ALL_SERVICES);// GAP
+    GATTServApp_AddService(GATT_ALL_SERVICES);   // GATT attributes
+    DevInfo_AddService();                        // Device Information Service
 
-  // Set the device name characteristic in the GAP Profile
-  GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName);
+    // Set the device name characteristic in the GAP Profile
+    GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName);
 
 #ifdef LAB_1        // Lab 1 - Apple Inter-operability
   // Set the GAP Device Name permissions
@@ -620,80 +643,66 @@ static void ProjectZero_init(void)
   //GGS_SetParameter( GGS_W_PERMIT_DEVICE_NAME_ATT, sizeof ( uint8 ), &devNamePermission );
 #endif /* LAB_1 */
 
-  // Add services to GATT server and give ID of this task for Indication acks.
-  LedService_AddService( selfEntity );
-  ButtonService_AddService( selfEntity );
-  DataService_AddService( selfEntity );
+    // Add services to GATT server and give ID of this task for Indication acks.
+    LedService_AddService(selfEntity);
+    ButtonService_AddService(selfEntity);
+    DataService_AddService(selfEntity);
 #ifdef LAB_2        // LAB_2 - Service configuration
   // Add services here
 #endif /* LAB_2 */
 
-  // Register callbacks with the generated services that
-  // can generate events (writes received) to the application
-  LedService_RegisterAppCBs( &user_LED_ServiceCBs );
-  ButtonService_RegisterAppCBs( &user_Button_ServiceCBs );
-  DataService_RegisterAppCBs( &user_Data_ServiceCBs );
+    // Register callbacks with the generated services that
+    // can generate events (writes received) to the application
+    LedService_RegisterAppCBs(&user_LED_ServiceCBs);
+    ButtonService_RegisterAppCBs(&user_Button_ServiceCBs);
+    DataService_RegisterAppCBs(&user_Data_ServiceCBs);
 #ifdef LAB_2        // LAB_2 - Service configuration
   // REgister App callbacks here
 #endif /* LAB_2 */
 
-  // Placeholder variable for characteristic initialization
-  uint8_t initVal[40] = {0};
-  uint8_t initString[] = "This is a pretty long string, isn't it!";
+    // Placeholder variable for characteristic initialization
+    uint8_t initVal[40] = { 0 };
+    uint8_t initString[] = "This is a pretty long string, isn't it!";
 
-  // Initialization of characteristics in LED_Service that can provide data.
-  LedService_SetParameter(LS_LED0_ID, LS_LED0_LEN, initVal);
-  LedService_SetParameter(LS_LED1_ID, LS_LED1_LEN, initVal);
+    // Initialization of characteristics in LED_Service that can provide data.
+    LedService_SetParameter(LS_LED0_ID, LS_LED0_LEN, initVal);
+    LedService_SetParameter(LS_LED1_ID, LS_LED1_LEN, initVal);
 
-  // Initialization of characteristics in Button_Service that can provide data.
-  ButtonService_SetParameter(BS_BUTTON0_ID, BS_BUTTON0_LEN, initVal);
-  ButtonService_SetParameter(BS_BUTTON1_ID, BS_BUTTON1_LEN, initVal);
+    // Initialization of characteristics in Button_Service that can provide data.
+    ButtonService_SetParameter(BS_BUTTON0_ID, BS_BUTTON0_LEN, initVal);
+    ButtonService_SetParameter(BS_BUTTON1_ID, BS_BUTTON1_LEN, initVal);
 
-  // Initalization of characteristics in Data_Service that can provide data.
-  DataService_SetParameter(DS_STRING_ID, sizeof(initString), initString);
-  DataService_SetParameter(DS_STREAM_ID, DS_STREAM_LEN, initVal);
+    // Initalization of characteristics in Data_Service that can provide data.
+    DataService_SetParameter(DS_STRING_ID, sizeof(initString), initString);
+    DataService_SetParameter(DS_STREAM_ID, DS_STREAM_LEN, initVal);
 
-  // Start the stack in Peripheral mode.
-  VOID GAPRole_StartDevice(&user_gapRoleCBs);
+    // Start the stack in Peripheral mode.
+    VOID GAPRole_StartDevice(&user_gapRoleCBs);
 
-  // Start Bond Manager
-  VOID GAPBondMgr_Register(&user_bondMgrCBs);
+    // Start Bond Manager
+    VOID GAPBondMgr_Register(&user_bondMgrCBs);
 
-  // Register with GAP for HCI/Host messages
-  GAP_RegisterForMsgs(selfEntity);
+    // Register with GAP for HCI/Host messages
+    GAP_RegisterForMsgs(selfEntity);
 
-  // Register for GATT local events and ATT Responses pending for transmission
-  GATT_RegisterForMsgs(selfEntity);
+    // Register for GATT local events and ATT Responses pending for transmission
+    GATT_RegisterForMsgs(selfEntity);
 
-  // ******************************************************************
-  // Application resource initialisation
-  // ******************************************************************
-#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-  // Construct the periodic clock
-  // Clock fires after an initial STARTUP_EVT_PERIOD milliseconds and every
-  // PERIODIC_EVT_PERIOD milliseconds after that
-  // Convert milliseconds to clock ticks by multiplying by (MSEC_PER_SEC / Clock_tickPeriod)
-  Clock_Params_init(&periodicClockParams);
-  periodicClockParams.arg = PRZ_PERIODIC_EVT;
-  periodicClockParams.period = PERIODIC_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod);
-  Clock_construct(&periodicClock, periodicClockTimeoutSwiFxn,
-                    STARTUP_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod), &periodicClockParams);
-  Clock_start(Clock_handle(&periodicClock));
-#endif /* LAB_4 */
-
-  //
-  // Service specific resource initialisation
-  //
+    // ******************************************************************
+    // Application resource initialisation
+    // ******************************************************************
+    //
+    // Service specific resource initialisation
+    //
 #ifdef LAB_3        // LAB_3 - LED String Driver Implementation
-  lss_Resource_Init();
+    lss_Resource_Init();
 #endif /* LAB_3 */
 
 #ifdef LAB_5        // LAB_5 - Analogue Input
-  als_Resource_Init();
+    als_Resource_Init();
 #endif /* LAB_5 */
 
 }
-
 
 /*
  * @brief   Application task entry point.
@@ -712,66 +721,57 @@ static void ProjectZero_init(void)
  *
  * @return  None.
  */
-static void ProjectZero_taskFxn(UArg a0, UArg a1)
+static void ProjectZero_taskFxn( UArg a0, UArg a1 )
 {
-  // Initialize application
-  ProjectZero_init();
+    // Initialize application
+    ProjectZero_init();
 
-  // Application main loop
-  for (;;)
-  {
-    uint32_t events;
-
-    // Waits for an event to be posted associated with the calling thread.
-    // Note that an event associated with a thread is posted when a
-    // message is queued to the message receive queue of the thread
-    events = Event_pend(syncEvent, Event_Id_NONE, PRZ_ALL_EVENTS,
-                        ICALL_TIMEOUT_FOREVER);
-
-    if (events)
+    // Application main loop
+    for (;;)
     {
-      ICall_EntityID dest;
-      ICall_ServiceEnum src;
-      ICall_HciExtEvt *pMsg = NULL;
+        uint32_t events;
 
-      // Check if we got a signal because of a stack message
-      if (ICall_fetchServiceMsg(&src, &dest,
-                                (void **)&pMsg) == ICALL_ERRNO_SUCCESS)
-      {
-        uint8 safeToDealloc = TRUE;
+        // Waits for an event to be posted associated with the calling thread.
+        // Note that an event associated with a thread is posted when a
+        // message is queued to the message receive queue of the thread
+        events = Event_pend(syncEvent, Event_Id_NONE, PRZ_ALL_EVENTS,
+        ICALL_TIMEOUT_FOREVER);
 
-        if ((src == ICALL_SERVICE_CLASS_BLE) && (dest == selfEntity))
+        if (events)
         {
-          ICall_Stack_Event *pEvt = (ICall_Stack_Event *)pMsg;
+            ICall_EntityID dest;
+            ICall_ServiceEnum src;
+            ICall_HciExtEvt *pMsg = NULL;
 
-          if (pEvt->signature != 0xffff)
-          {
-            // Process inter-task message
-            safeToDealloc = ProjectZero_processStackMsg((ICall_Hdr *)pMsg);
-          }
-        }
+            // Check if we got a signal because of a stack message
+            if (ICall_fetchServiceMsg(&src, &dest,
+                                      (void **) &pMsg) == ICALL_ERRNO_SUCCESS)
+            {
+                uint8 safeToDealloc = TRUE;
 
-        if (pMsg && safeToDealloc)
-        {
-          ICall_freeMsg(pMsg);
-        }
-      }
+                if ((src == ICALL_SERVICE_CLASS_BLE) && (dest == selfEntity))
+                {
+                    ICall_Stack_Event *pEvt = (ICall_Stack_Event *) pMsg;
 
-      // Process messages sent from another task or another context.
-      while (!Queue_empty(hApplicationMsgQ))
-      {
-        app_msg_t *pMsg = Queue_dequeue(hApplicationMsgQ);
+                    if (pEvt->signature != 0xffff)
+                    {
+                        // Process inter-task message
+                        safeToDealloc = ProjectZero_processStackMsg(
+                                (ICall_Hdr *) pMsg);
+                    }
+                }
 
-        // Process application-layer message probably sent from ourselves.
-        user_processApplicationMessage(pMsg);
+                if (pMsg && safeToDealloc)
+                {
+                    ICall_freeMsg(pMsg);
+                }
+            }
 
         // Free the received message.
         ICall_free(pMsg);
       }
     }
-  }
 }
-
 
 /*
  * @brief   Handle application messages
@@ -787,88 +787,89 @@ static void ProjectZero_taskFxn(UArg a0, UArg a1)
  *
  * @return  None.
  */
-static void user_processApplicationMessage(app_msg_t *pMsg)
+static void user_processApplicationMessage( app_msg_t *pMsg )
 {
-  char_data_t *pCharData = (char_data_t *)pMsg->pdu;
+    char_data_t *pCharData = (char_data_t *) pMsg->pdu;
 
-  switch (pMsg->type)
-  {
-    case APP_MSG_SERVICE_WRITE: /* Message about received value write */
-      /* Call different handler per service */
-      switch(pCharData->svcUUID) {
-#ifdef LAB_2        // LAB_2 - Service configuration
-      case LSS_SERVICE_SERV_UUID:
-          user_LssService_ValueChangeHandler(pCharData);
-          break;
-      case ALS_SERVICE_SERV_UUID:
-          user_AlsService_ValueChangeHandler(pCharData);
-          break;
-#endif /* LAB_2 */
-      case LED_SERVICE_SERV_UUID:
-          user_LedService_ValueChangeHandler(pCharData);
-          break;
-      case DATA_SERVICE_SERV_UUID:
-          user_DataService_ValueChangeHandler(pCharData);
-          break;
-
-      }
-      break;
-
-    case APP_MSG_SERVICE_CFG: /* Message about received CCCD write */
-      /* Call different handler per service */
-      switch(pCharData->svcUUID) {
-#ifdef LAB_2    // LAB_2 - Service configuration
-      case ALS_SERVICE_SERV_UUID:
-          user_AlsService_CfgChangeHandler(pCharData);
-          break;
-#endif /* LAB_2 */
-      case BUTTON_SERVICE_SERV_UUID:
-        user_ButtonService_CfgChangeHandler(pCharData);
-        break;
-      case DATA_SERVICE_SERV_UUID:
-        user_DataService_CfgChangeHandler(pCharData);
-        break;
-      }
-      break;
-
-   case HCI_BLE_HARDWARE_ERROR_EVENT_CODE:
-     AssertHandler(HAL_ASSERT_CAUSE_HARDWARE_ERROR,0);
-     break;
-
-    case APP_MSG_UPDATE_CHARVAL: /* Message from ourselves to send  */
-      user_updateCharVal(pCharData);
-      break;
-
-    case APP_MSG_GAP_STATE_CHANGE: /* Message that GAP state changed  */
-      user_processGapStateChangeEvt( *(gaprole_States_t *)pMsg->pdu );
-      break;
-
-    case APP_MSG_SEND_PASSCODE: /* Message about pairing PIN request */
-      {
-        passcode_req_t *pReq = (passcode_req_t *)pMsg->pdu;
-        Log_info2("BondMgr Requested passcode. We are %s passcode %06d",
-                  (IArg)(pReq->uiInputs?"Sending":"Displaying"),
-                  DEFAULT_PASSCODE);
-        // Send passcode response.
-        GAPBondMgr_PasscodeRsp(pReq->connHandle, SUCCESS, DEFAULT_PASSCODE);
-      }
-      break;
-
-    case APP_MSG_BUTTON_DEBOUNCED: /* Message from swi about pin change */
-      {
-        button_state_t *pButtonState = (button_state_t *)pMsg->pdu;
-        user_handleButtonPress(pButtonState);
-      }
-      break;
-
-    case APP_MSG_PRZ_CONN_EVT:
+    switch (pMsg->type)
     {
-        ProjectZero_processConnEvt((Gap_ConnEventRpt_t *)pMsg->pdu);
-        break;
-    }
-  }
-}
+        case APP_MSG_SERVICE_WRITE: /* Message about received value write */
+            /* Call different handler per service */
+            switch (pCharData->svcUUID)
+            {
+#ifdef LAB_2        // LAB_2 - Service configuration
+                case LSS_SERVICE_SERV_UUID:
+                    user_LssService_ValueChangeHandler(pCharData);
+                    break;
+                case ALS_SERVICE_SERV_UUID:
+                    user_AlsService_ValueChangeHandler(pCharData);
+                    break;
+#endif /* LAB_2 */
+                case LED_SERVICE_SERV_UUID:
+                    user_LedService_ValueChangeHandler(pCharData);
+                    break;
+                case DATA_SERVICE_SERV_UUID:
+                    user_DataService_ValueChangeHandler(pCharData);
+                    break;
 
+            }
+            break;
+
+        case APP_MSG_SERVICE_CFG: /* Message about received CCCD write */
+            /* Call different handler per service */
+            switch (pCharData->svcUUID)
+            {
+#ifdef LAB_2    // LAB_2 - Service configuration
+                case ALS_SERVICE_SERV_UUID:
+                    user_AlsService_CfgChangeHandler(pCharData);
+                    break;
+#endif /* LAB_2 */
+                case BUTTON_SERVICE_SERV_UUID:
+                    user_ButtonService_CfgChangeHandler(pCharData);
+                    break;
+                case DATA_SERVICE_SERV_UUID:
+                    user_DataService_CfgChangeHandler(pCharData);
+                    break;
+            }
+            break;
+
+        case HCI_BLE_HARDWARE_ERROR_EVENT_CODE:
+            AssertHandler(HAL_ASSERT_CAUSE_HARDWARE_ERROR, 0);
+            break;
+
+        case APP_MSG_UPDATE_CHARVAL: /* Message from ourselves to send  */
+            user_updateCharVal(pCharData);
+            break;
+
+        case APP_MSG_GAP_STATE_CHANGE: /* Message that GAP state changed  */
+            user_processGapStateChangeEvt(*(gaprole_States_t *) pMsg->pdu);
+            break;
+
+        case APP_MSG_SEND_PASSCODE: /* Message about pairing PIN request */
+        {
+            passcode_req_t *pReq = (passcode_req_t *) pMsg->pdu;
+            Log_info2("BondMgr Requested passcode. We are %s passcode %06d",
+                      (IArg )(pReq->uiInputs ? "Sending" : "Displaying"),
+                      DEFAULT_PASSCODE);
+            // Send passcode response.
+            GAPBondMgr_PasscodeRsp(pReq->connHandle, SUCCESS, DEFAULT_PASSCODE);
+        }
+            break;
+
+        case APP_MSG_BUTTON_DEBOUNCED: /* Message from swi about pin change */
+        {
+            button_state_t *pButtonState = (button_state_t *) pMsg->pdu;
+            user_handleButtonPress(pButtonState);
+        }
+            break;
+
+        case APP_MSG_PRZ_CONN_EVT:
+        {
+            ProjectZero_processConnEvt((Gap_ConnEventRpt_t *) pMsg->pdu);
+            break;
+        }
+    }
+}
 
 /******************************************************************************
  *****************************************************************************
@@ -882,7 +883,6 @@ static void user_processApplicationMessage(app_msg_t *pMsg)
  ****************************************************************************
  *****************************************************************************/
 
-
 /*
  * @brief   Process a pending GAP Role state change event.
  *
@@ -890,75 +890,77 @@ static void user_processApplicationMessage(app_msg_t *pMsg)
  *
  * @return  None.
  */
-static void user_processGapStateChangeEvt(gaprole_States_t newState)
+static void user_processGapStateChangeEvt( gaprole_States_t newState )
 {
-  switch ( newState )
-  {
-    case GAPROLE_STARTED:
-      {
-        uint8_t ownAddress[B_ADDR_LEN];
-        uint8_t systemId[DEVINFO_SYSTEM_ID_LEN];
+    switch (newState)
+    {
+        case GAPROLE_STARTED:
+        {
+            uint8_t ownAddress[B_ADDR_LEN];
+            uint8_t systemId[DEVINFO_SYSTEM_ID_LEN];
 
-        GAPRole_GetParameter(GAPROLE_BD_ADDR, ownAddress);
+            GAPRole_GetParameter(GAPROLE_BD_ADDR, ownAddress);
 
-        // use 6 bytes of device address for 8 bytes of system ID value
-        systemId[0] = ownAddress[0];
-        systemId[1] = ownAddress[1];
-        systemId[2] = ownAddress[2];
+            // use 6 bytes of device address for 8 bytes of system ID value
+            systemId[0] = ownAddress[0];
+            systemId[1] = ownAddress[1];
+            systemId[2] = ownAddress[2];
 
-        // set middle bytes to zero
-        systemId[4] = 0x00;
-        systemId[3] = 0x00;
+            // set middle bytes to zero
+            systemId[4] = 0x00;
+            systemId[3] = 0x00;
 
-        // shift three bytes up
-        systemId[7] = ownAddress[5];
-        systemId[6] = ownAddress[4];
-        systemId[5] = ownAddress[3];
+            // shift three bytes up
+            systemId[7] = ownAddress[5];
+            systemId[6] = ownAddress[4];
+            systemId[5] = ownAddress[3];
 
-        DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
+            DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN,
+                                 systemId);
 
-        // Display device address
-        char *cstr_ownAddress = Util_convertBdAddr2Str(ownAddress);
-        Log_info1("GAP is started. Our address: \x1b[32m%s\x1b[0m", (IArg)cstr_ownAddress);
-      }
-      break;
+            // Display device address
+            char *cstr_ownAddress = Util_convertBdAddr2Str(ownAddress);
+            Log_info1("GAP is started. Our address: \x1b[32m%s\x1b[0m",
+                      (IArg )cstr_ownAddress);
+        }
+            break;
 
-    case GAPROLE_ADVERTISING:
-      Log_info0("Advertising");
-      break;
+        case GAPROLE_ADVERTISING:
+            Log_info0("Advertising");
+            break;
 
-    case GAPROLE_CONNECTED:
-      {
-        uint8_t peerAddress[B_ADDR_LEN];
+        case GAPROLE_CONNECTED:
+        {
+            uint8_t peerAddress[B_ADDR_LEN];
 
-        GAPRole_GetParameter(GAPROLE_CONN_BD_ADDR, peerAddress);
+            GAPRole_GetParameter(GAPROLE_CONN_BD_ADDR, peerAddress);
 
-        char *cstr_peerAddress = Util_convertBdAddr2Str(peerAddress);
-        Log_info1("Connected. Peer address: \x1b[32m%s\x1b[0m", (IArg)cstr_peerAddress);
-       }
-      break;
+            char *cstr_peerAddress = Util_convertBdAddr2Str(peerAddress);
+            Log_info1("Connected. Peer address: \x1b[32m%s\x1b[0m",
+                      (IArg )cstr_peerAddress);
+        }
+            break;
 
-    case GAPROLE_CONNECTED_ADV:
-      Log_info0("Connected and advertising");
-      break;
+        case GAPROLE_CONNECTED_ADV:
+            Log_info0("Connected and advertising");
+            break;
 
-    case GAPROLE_WAITING:
-      Log_info0("Disconnected / Idle");
-      break;
+        case GAPROLE_WAITING:
+            Log_info0("Disconnected / Idle");
+            break;
 
-    case GAPROLE_WAITING_AFTER_TIMEOUT:
-      Log_info0("Connection timed out");
-      break;
+        case GAPROLE_WAITING_AFTER_TIMEOUT:
+            Log_info0("Connection timed out");
+            break;
 
-    case GAPROLE_ERROR:
-      Log_info0("Error");
-      break;
+        case GAPROLE_ERROR:
+            Log_info0("Error");
+            break;
 
-    default:
-      break;
-  }
+        default:
+            break;
+    }
 }
-
 
 /*
  * @brief   Handle a debounced button press or release in Task context.
@@ -971,28 +973,27 @@ static void user_processGapStateChangeEvt(gaprole_States_t newState)
  *
  * @return  None.
  */
-static void user_handleButtonPress(button_state_t *pState)
+static void user_handleButtonPress( button_state_t *pState )
 {
-  Log_info2("%s %s",
-    (IArg)(pState->pinId == Board_BUTTON0?"Button 0":"Button 1"),
-    (IArg)(pState->state?"\x1b[32mpressed\x1b[0m":
-                         "\x1b[33mreleased\x1b[0m"));
+    Log_info2(
+            "%s %s",
+            (IArg)(pState->pinId == Board_BUTTON0?"Button 0":"Button 1"),
+            (IArg )(pState->state ?
+                    "\x1b[32mpressed\x1b[0m" : "\x1b[33mreleased\x1b[0m"));
 
-  // Update the service with the new value.
-  // Will automatically send notification/indication if enabled.
-  switch (pState->pinId)
-  {
-    case Board_BUTTON0:
-      ButtonService_SetParameter(BS_BUTTON0_ID,
-                                 sizeof(pState->state),
-                                 &pState->state);
-      break;
-    case Board_BUTTON1:
-      ButtonService_SetParameter(BS_BUTTON1_ID,
-                                 sizeof(pState->state),
-                                 &pState->state);
-      break;
-  }
+    // Update the service with the new value.
+    // Will automatically send notification/indication if enabled.
+    switch (pState->pinId)
+    {
+        case Board_BUTTON0:
+            ButtonService_SetParameter(BS_BUTTON0_ID, sizeof(pState->state),
+                                       &pState->state);
+            break;
+        case Board_BUTTON1:
+            ButtonService_SetParameter(BS_BUTTON1_ID, sizeof(pState->state),
+                                       &pState->state);
+            break;
+    }
 }
 
 /*
@@ -1008,49 +1009,43 @@ static void user_handleButtonPress(button_state_t *pState)
  *
  * @return  None.
  */
-void user_LedService_ValueChangeHandler(char_data_t *pCharData)
+void user_LedService_ValueChangeHandler( char_data_t *pCharData )
 {
-  static uint8_t pretty_data_holder[16]; // 5 bytes as hex string "AA:BB:CC:DD:EE"
-  Util_convertArrayToHexString(pCharData->data, pCharData->dataLen,
-                               pretty_data_holder, sizeof(pretty_data_holder));
+    static uint8_t pretty_data_holder[16]; // 5 bytes as hex string "AA:BB:CC:DD:EE"
+    Util_convertArrayToHexString(pCharData->data, pCharData->dataLen,
+                                 pretty_data_holder,
+                                 sizeof(pretty_data_holder));
 
-  switch (pCharData->paramID)
-  {
-    case LS_LED0_ID:
-      Log_info3("Value Change msg: %s %s: %s",
-                (IArg)"LED Service",
-                (IArg)"LED0",
-                (IArg)pretty_data_holder);
+    switch (pCharData->paramID)
+    {
+        case LS_LED0_ID:
+            Log_info3("Value Change msg: %s %s: %s", (IArg )"LED Service",
+                      (IArg )"LED0", (IArg )pretty_data_holder);
 
-      // Do something useful with pCharData->data here
-      // -------------------------
-      // Set the output value equal to the received value. 0 is off, not 0 is on
-      PIN_setOutputValue(ledPinHandle, Board_RLED, pCharData->data[0]);
-      Log_info2("Turning %s %s",
-                (IArg)"\x1b[31mLED0\x1b[0m",
-                (IArg)(pCharData->data[0]?"on":"off"));
-      break;
+            // Do something useful with pCharData->data here
+            // -------------------------
+            // Set the output value equal to the received value. 0 is off, not 0 is on
+            PIN_setOutputValue(ledPinHandle, Board_RLED, pCharData->data[0]);
+            Log_info2("Turning %s %s", (IArg )"\x1b[31mLED0\x1b[0m",
+                      (IArg )(pCharData->data[0] ? "on" : "off"));
+            break;
 
-    case LS_LED1_ID:
-      Log_info3("Value Change msg: %s %s: %s",
-                (IArg)"LED Service",
-                (IArg)"LED1",
-                (IArg)pretty_data_holder);
+        case LS_LED1_ID:
+            Log_info3("Value Change msg: %s %s: %s", (IArg )"LED Service",
+                      (IArg )"LED1", (IArg )pretty_data_holder);
 
-      // Do something useful with pCharData->data here
-      // -------------------------
-      // Set the output value equal to the received value. 0 is off, not 0 is on
-      PIN_setOutputValue(ledPinHandle, Board_GLED, pCharData->data[0]);
-      Log_info2("Turning %s %s",
-                (IArg)"\x1b[32mLED1\x1b[0m",
-                (IArg)(pCharData->data[0]?"on":"off"));
-      break;
+            // Do something useful with pCharData->data here
+            // -------------------------
+            // Set the output value equal to the received value. 0 is off, not 0 is on
+            PIN_setOutputValue(ledPinHandle, Board_GLED, pCharData->data[0]);
+            Log_info2("Turning %s %s", (IArg )"\x1b[32mLED1\x1b[0m",
+                      (IArg )(pCharData->data[0] ? "on" : "off"));
+            break;
 
-  default:
-    return;
-  }
+        default:
+            return;
+    }
 }
-
 
 /*
  * @brief   Handle a CCCD (configuration change) write received from a peer
@@ -1061,51 +1056,47 @@ void user_LedService_ValueChangeHandler(char_data_t *pCharData)
  *
  * @return  None.
  */
-void user_ButtonService_CfgChangeHandler(char_data_t *pCharData)
+void user_ButtonService_CfgChangeHandler( char_data_t *pCharData )
 {
 #if defined(UARTLOG_ENABLE)
-  // Cast received data to uint16, as that's the format for CCCD writes.
-  uint16_t configValue = *(uint16_t *)pCharData->data;
-  char *configValString;
+    // Cast received data to uint16, as that's the format for CCCD writes.
+    uint16_t configValue = *(uint16_t *) pCharData->data;
+    char *configValString;
 
-  // Determine what to tell the user
-  switch(configValue)
-  {
-  case GATT_CFG_NO_OPERATION:
-    configValString = "Noti/Ind disabled";
-    break;
-  case GATT_CLIENT_CFG_NOTIFY:
-    configValString = "Notifications enabled";
-    break;
-  case GATT_CLIENT_CFG_INDICATE:
-    configValString = "Indications enabled";
-    break;
-  }
+    // Determine what to tell the user
+    switch (configValue)
+    {
+        case GATT_CFG_NO_OPERATION:
+            configValString = "Noti/Ind disabled";
+            break;
+        case GATT_CLIENT_CFG_NOTIFY:
+            configValString = "Notifications enabled";
+            break;
+        case GATT_CLIENT_CFG_INDICATE:
+            configValString = "Indications enabled";
+            break;
+    }
 #endif
-  switch (pCharData->paramID)
-  {
-    case BS_BUTTON0_ID:
-      Log_info3("CCCD Change msg: %s %s: %s",
-                (IArg)"Button Service",
-                (IArg)"BUTTON0",
-                (IArg)configValString);
-      // -------------------------
-      // Do something useful with configValue here. It tells you whether someone
-      // wants to know the state of this characteristic.
-      // ...
-      break;
+    switch (pCharData->paramID)
+    {
+        case BS_BUTTON0_ID:
+            Log_info3("CCCD Change msg: %s %s: %s", (IArg )"Button Service",
+                      (IArg )"BUTTON0", (IArg )configValString);
+            // -------------------------
+            // Do something useful with configValue here. It tells you whether someone
+            // wants to know the state of this characteristic.
+            // ...
+            break;
 
-    case BS_BUTTON1_ID:
-      Log_info3("CCCD Change msg: %s %s: %s",
-                (IArg)"Button Service",
-                (IArg)"BUTTON1",
-                (IArg)configValString);
-      // -------------------------
-      // Do something useful with configValue here. It tells you whether someone
-      // wants to know the state of this characteristic.
-      // ...
-      break;
-  }
+        case BS_BUTTON1_ID:
+            Log_info3("CCCD Change msg: %s %s: %s", (IArg )"Button Service",
+                      (IArg )"BUTTON1", (IArg )configValString);
+            // -------------------------
+            // Do something useful with configValue here. It tells you whether someone
+            // wants to know the state of this characteristic.
+            // ...
+            break;
+    }
 }
 
 /*
@@ -1121,40 +1112,38 @@ void user_ButtonService_CfgChangeHandler(char_data_t *pCharData)
  *
  * @return  None.
  */
-void user_DataService_ValueChangeHandler(char_data_t *pCharData)
+void user_DataService_ValueChangeHandler( char_data_t *pCharData )
 {
-  // Value to hold the received string for printing via Log, as Log printouts
-  // happen in the Idle task, and so need to refer to a global/static variable.
-  static uint8_t received_string[DS_STRING_LEN] = {0};
+    // Value to hold the received string for printing via Log, as Log printouts
+    // happen in the Idle task, and so need to refer to a global/static variable.
+    static uint8_t received_string[DS_STRING_LEN] = { 0 };
 
-  switch (pCharData->paramID)
-  {
-    case DS_STRING_ID:
-      // Do something useful with pCharData->data here
-      // -------------------------
-      // Copy received data to holder array, ensuring NULL termination.
-      memset(received_string, 0, DS_STRING_LEN);
-      memcpy(received_string, pCharData->data, DS_STRING_LEN-1);
-      // Needed to copy before log statement, as the holder array remains after
-      // the pCharData message has been freed and reused for something else.
-      Log_info3("Value Change msg: %s %s: %s",
-                (IArg)"Data Service",
-                (IArg)"String",
-                (IArg)received_string);
-      break;
+    switch (pCharData->paramID)
+    {
+        case DS_STRING_ID:
+            // Do something useful with pCharData->data here
+            // -------------------------
+            // Copy received data to holder array, ensuring NULL termination.
+            memset(received_string, 0, DS_STRING_LEN);
+            memcpy(received_string, pCharData->data, DS_STRING_LEN - 1);
+            // Needed to copy before log statement, as the holder array remains after
+            // the pCharData message has been freed and reused for something else.
+            Log_info3("Value Change msg: %s %s: %s", (IArg )"Data Service",
+                      (IArg )"String", (IArg )received_string);
+            break;
 
-    case DS_STREAM_ID:
-      Log_info3("Value Change msg: Data Service Stream: %02x:%02x:%02x...",
-                (IArg)pCharData->data[0],
-                (IArg)pCharData->data[1],
-                (IArg)pCharData->data[2]);
-      // -------------------------
-      // Do something useful with pCharData->data here
-      break;
+        case DS_STREAM_ID:
+            Log_info3(
+                    "Value Change msg: Data Service Stream: %02x:%02x:%02x...",
+                    (IArg )pCharData->data[0], (IArg )pCharData->data[1],
+                    (IArg )pCharData->data[2]);
+            // -------------------------
+            // Do something useful with pCharData->data here
+            break;
 
-  default:
-    return;
-  }
+        default:
+            return;
+    }
 }
 
 /*
@@ -1166,40 +1155,38 @@ void user_DataService_ValueChangeHandler(char_data_t *pCharData)
  *
  * @return  None.
  */
-void user_DataService_CfgChangeHandler(char_data_t *pCharData)
+void user_DataService_CfgChangeHandler( char_data_t *pCharData )
 {
 #if defined(UARTLOG_ENABLE)
-  // Cast received data to uint16, as that's the format for CCCD writes.
-  uint16_t configValue = *(uint16_t *)pCharData->data;
-  char *configValString;
+    // Cast received data to uint16, as that's the format for CCCD writes.
+    uint16_t configValue = *(uint16_t *) pCharData->data;
+    char *configValString;
 
-  // Determine what to tell the user
-  switch(configValue)
-  {
-  case GATT_CFG_NO_OPERATION:
-    configValString = "Noti/Ind disabled";
-    break;
-  case GATT_CLIENT_CFG_NOTIFY:
-    configValString = "Notifications enabled";
-    break;
-  case GATT_CLIENT_CFG_INDICATE:
-    configValString = "Indications enabled";
-    break;
-  }
+    // Determine what to tell the user
+    switch (configValue)
+    {
+        case GATT_CFG_NO_OPERATION:
+            configValString = "Noti/Ind disabled";
+            break;
+        case GATT_CLIENT_CFG_NOTIFY:
+            configValString = "Notifications enabled";
+            break;
+        case GATT_CLIENT_CFG_INDICATE:
+            configValString = "Indications enabled";
+            break;
+    }
 #endif
-  switch (pCharData->paramID)
-  {
-    case DS_STREAM_ID:
-      Log_info3("CCCD Change msg: %s %s: %s",
-                (IArg)"Data Service",
-                (IArg)"Stream",
-                (IArg)configValString);
-      // -------------------------
-      // Do something useful with configValue here. It tells you whether someone
-      // wants to know the state of this characteristic.
-      // ...
-      break;
-  }
+    switch (pCharData->paramID)
+    {
+        case DS_STREAM_ID:
+            Log_info3("CCCD Change msg: %s %s: %s", (IArg )"Data Service",
+                      (IArg )"Stream", (IArg )configValString);
+            // -------------------------
+            // Do something useful with configValue here. It tells you whether someone
+            // wants to know the state of this characteristic.
+            // ...
+            break;
+    }
 }
 
 /*
@@ -1213,95 +1200,95 @@ void user_DataService_CfgChangeHandler(char_data_t *pCharData)
  *
  * @return  TRUE if safe to deallocate incoming message, FALSE otherwise.
  */
-static uint8_t ProjectZero_processStackMsg(ICall_Hdr *pMsg)
+static uint8_t ProjectZero_processStackMsg( ICall_Hdr *pMsg )
 {
-  uint8_t safeToDealloc = TRUE;
+    uint8_t safeToDealloc = TRUE;
 
-  switch (pMsg->event)
-  {
-    case GATT_MSG_EVENT:
-      // Process GATT message
-      safeToDealloc = ProjectZero_processGATTMsg((gattMsgEvent_t *)pMsg);
-      break;
+    switch (pMsg->event)
+    {
+        case GATT_MSG_EVENT:
+            // Process GATT message
+            safeToDealloc = ProjectZero_processGATTMsg((gattMsgEvent_t *) pMsg);
+            break;
 
-    case HCI_GAP_EVENT_EVENT:
-      {
-        // Process HCI message
-        switch(pMsg->status)
+        case HCI_GAP_EVENT_EVENT:
         {
-          case HCI_COMMAND_COMPLETE_EVENT_CODE:
-            // Process HCI Command Complete Event
-            Log_info0("HCI Command Complete Event received");
-            break;
+            // Process HCI message
+            switch (pMsg->status)
+            {
+                case HCI_COMMAND_COMPLETE_EVENT_CODE:
+                    // Process HCI Command Complete Event
+                    Log_info0("HCI Command Complete Event received");
+                    break;
 
-          default:
-            break;
+                default:
+                    break;
+            }
         }
-      }
-      break;
+            break;
 
-    default:
-      // do nothing
-      break;
-  }
+        default:
+            // do nothing
+            break;
+    }
 
-  return (safeToDealloc);
+    return (safeToDealloc);
 }
-
 
 /*
  * @brief   Process GATT messages and events.
  *
  * @return  TRUE if safe to deallocate incoming message, FALSE otherwise.
  */
-static uint8_t ProjectZero_processGATTMsg(gattMsgEvent_t *pMsg)
+static uint8_t ProjectZero_processGATTMsg( gattMsgEvent_t *pMsg )
 {
-  // See if GATT server was unable to transmit an ATT response
-  if (pMsg->hdr.status == blePending)
-  {
-    Log_warning1("Outgoing RF FIFO full. Re-schedule transmission of msg with opcode 0x%02x",
-      pMsg->method);
-
-    // No HCI buffer was available. Let's try to retransmit the response
-    // on the next connection event.
-    if(ProjectZero_RegistertToAllConnectionEvent(FOR_ATT_RSP) == SUCCESS)
+    // See if GATT server was unable to transmit an ATT response
+    if (pMsg->hdr.status == blePending)
     {
-      // First free any pending response
-      ProjectZero_freeAttRsp(FAILURE);
+        Log_warning1(
+                "Outgoing RF FIFO full. Re-schedule transmission of msg with opcode 0x%02x",
+                pMsg->method);
 
-      // Hold on to the response message for retransmission
-      pAttRsp = pMsg;
+        // No HCI buffer was available. Let's try to retransmit the response
+        // on the next connection event.
+        if (ProjectZero_RegistertToAllConnectionEvent(FOR_ATT_RSP) == SUCCESS)
+        {
+            // First free any pending response
+            ProjectZero_freeAttRsp(FAILURE);
 
-      // Don't free the response message yet
-      return (FALSE);
+            // Hold on to the response message for retransmission
+            pAttRsp = pMsg;
+
+            // Don't free the response message yet
+            return (FALSE);
+        }
     }
-  }
-  else if (pMsg->method == ATT_FLOW_CTRL_VIOLATED_EVENT)
-  {
-    // ATT request-response or indication-confirmation flow control is
-    // violated. All subsequent ATT requests or indications will be dropped.
-    // The app is informed in case it wants to drop the connection.
+    else if (pMsg->method == ATT_FLOW_CTRL_VIOLATED_EVENT)
+    {
+        // ATT request-response or indication-confirmation flow control is
+        // violated. All subsequent ATT requests or indications will be dropped.
+        // The app is informed in case it wants to drop the connection.
 
-    // Log the opcode of the message that caused the violation.
-    Log_error1("Flow control violated. Opcode of offending ATT msg: 0x%02x",
-      pMsg->msg.flowCtrlEvt.opcode);
-  }
-  else if (pMsg->method == ATT_MTU_UPDATED_EVENT)
-  {
-    // MTU size updated
-    Log_info1("MTU Size change: %d bytes", pMsg->msg.mtuEvt.MTU);
-  }
-  else
-  {
-    // Got an expected GATT message from a peer.
-    Log_info1("Recevied GATT Message. Opcode: 0x%02x", pMsg->method);
-  }
+        // Log the opcode of the message that caused the violation.
+        Log_error1("Flow control violated. Opcode of offending ATT msg: 0x%02x",
+                   pMsg->msg.flowCtrlEvt.opcode);
+    }
+    else if (pMsg->method == ATT_MTU_UPDATED_EVENT)
+    {
+        // MTU size updated
+        Log_info1("MTU Size change: %d bytes", pMsg->msg.mtuEvt.MTU);
+    }
+    else
+    {
+        // Got an expected GATT message from a peer.
+        Log_info1("Recevied GATT Message. Opcode: 0x%02x", pMsg->method);
+    }
 
-  // Free message payload. Needed only for ATT Protocol messages
-  GATT_bm_free(&pMsg->msg, pMsg->method);
+    // Free message payload. Needed only for ATT Protocol messages
+    GATT_bm_free(&pMsg->msg, pMsg->method);
 
-  // It's safe to free the incoming message
-  return (TRUE);
+    // It's safe to free the incoming message
+    return (TRUE);
 }
 
 /*********************************************************************
@@ -1311,22 +1298,20 @@ static uint8_t ProjectZero_processGATTMsg(gattMsgEvent_t *pMsg)
  *
  * @param pReport pointer to connection event report
  */
-static void ProjectZero_processConnEvt(Gap_ConnEventRpt_t *pReport)
+static void ProjectZero_processConnEvt( Gap_ConnEventRpt_t *pReport )
 {
 
-  if( CONNECTION_EVENT_REGISTRATION_CAUSE(FOR_ATT_RSP))
-  {
-    // The GATT server might have returned a blePending as it was trying
-    // to process an ATT Response. Now that we finished with this
-    // connection event, let's try sending any remaining ATT Responses
-    // on the next connection event.
-    // Try to retransmit pending ATT Response (if any)
-    ProjectZero_sendAttRsp();
-  }
+    if (CONNECTION_EVENT_REGISTRATION_CAUSE(FOR_ATT_RSP))
+    {
+        // The GATT server might have returned a blePending as it was trying
+        // to process an ATT Response. Now that we finished with this
+        // connection event, let's try sending any remaining ATT Responses
+        // on the next connection event.
+        // Try to retransmit pending ATT Response (if any)
+        ProjectZero_sendAttRsp();
+    }
 
 }
-
-
 
 /*
  *  Application error handling functions
@@ -1343,34 +1328,35 @@ static void ProjectZero_processConnEvt(Gap_ConnEventRpt_t *pReport)
  *
  * @return  none
  */
-static void ProjectZero_sendAttRsp(void)
+static void ProjectZero_sendAttRsp( void )
 {
-  // See if there's a pending ATT Response to be transmitted
-  if (pAttRsp != NULL)
-  {
-    uint8_t status;
-
-    // Increment retransmission count
-    rspTxRetry++;
-
-    // Try to retransmit ATT response till either we're successful or
-    // the ATT Client times out (after 30s) and drops the connection.
-    status = GATT_SendRsp(pAttRsp->connHandle, pAttRsp->method, &(pAttRsp->msg));
-    if ((status != blePending) && (status != MSG_BUFFER_NOT_AVAIL))
+    // See if there's a pending ATT Response to be transmitted
+    if (pAttRsp != NULL)
     {
-      // Disable connection event end notice
-      ProjectZero_UnRegistertToAllConnectionEvent (FOR_ATT_RSP);
+        uint8_t status;
 
-      // We're done with the response message
-      ProjectZero_freeAttRsp(status);
+        // Increment retransmission count
+        rspTxRetry++;
+
+        // Try to retransmit ATT response till either we're successful or
+        // the ATT Client times out (after 30s) and drops the connection.
+        status = GATT_SendRsp(pAttRsp->connHandle, pAttRsp->method,
+                              &(pAttRsp->msg));
+        if ((status != blePending) && (status != MSG_BUFFER_NOT_AVAIL))
+        {
+            // Disable connection event end notice
+            ProjectZero_UnRegistertToAllConnectionEvent(FOR_ATT_RSP);
+
+            // We're done with the response message
+            ProjectZero_freeAttRsp(status);
+        }
+        else
+        {
+            // Continue retrying
+            Log_warning2("Retrying message with opcode 0x%02x. Attempt %d",
+                         pAttRsp->method, rspTxRetry);
+        }
     }
-    else
-    {
-      // Continue retrying
-      Log_warning2("Retrying message with opcode 0x%02x. Attempt %d",
-        pAttRsp->method, rspTxRetry);
-    }
-  }
 }
 
 /*
@@ -1380,35 +1366,34 @@ static void ProjectZero_sendAttRsp(void)
  *
  * @return  none
  */
-static void ProjectZero_freeAttRsp(uint8_t status)
+static void ProjectZero_freeAttRsp( uint8_t status )
 {
-  // See if there's a pending ATT response message
-  if (pAttRsp != NULL)
-  {
-    // See if the response was sent out successfully
-    if (status == SUCCESS)
+    // See if there's a pending ATT response message
+    if (pAttRsp != NULL)
     {
-      Log_info2("Sent message with opcode 0x%02x. Attempt %d",
-        pAttRsp->method, rspTxRetry);
+        // See if the response was sent out successfully
+        if (status == SUCCESS)
+        {
+            Log_info2("Sent message with opcode 0x%02x. Attempt %d",
+                      pAttRsp->method, rspTxRetry);
+        }
+        else
+        {
+            Log_error2("Gave up message with opcode 0x%02x. Status: %d",
+                       pAttRsp->method, status);
+
+            // Free response payload
+            GATT_bm_free(&pAttRsp->msg, pAttRsp->method);
+        }
+
+        // Free response message
+        ICall_freeMsg(pAttRsp);
+
+        // Reset our globals
+        pAttRsp = NULL;
+        rspTxRetry = 0;
     }
-    else
-    {
-      Log_error2("Gave up message with opcode 0x%02x. Status: %d",
-        pAttRsp->method, status);
-
-      // Free response payload
-      GATT_bm_free(&pAttRsp->msg, pAttRsp->method);
-    }
-
-    // Free response message
-    ICall_freeMsg(pAttRsp);
-
-    // Reset our globals
-    pAttRsp = NULL;
-    rspTxRetry = 0;
-  }
 }
-
 
 /******************************************************************************
  *****************************************************************************
@@ -1428,11 +1413,12 @@ static void ProjectZero_freeAttRsp(uint8_t status)
  *
  * @param pReport pointer to connection event report
  */
-static void ProjectZero_connEvtCB(Gap_ConnEventRpt_t *pReport)
+static void ProjectZero_connEvtCB( Gap_ConnEventRpt_t *pReport )
 {
-  // Enqueue the event for processing in the app context.
-  user_enqueueRawAppMsg(APP_MSG_PRZ_CONN_EVT, (uint8_t *)pReport, sizeof(pReport));
-  ICall_free(pReport);
+    // Enqueue the event for processing in the app context.
+    user_enqueueRawAppMsg(APP_MSG_PRZ_CONN_EVT, (uint8_t *) pReport,
+                          sizeof(pReport));
+    ICall_free(pReport);
 }
 
 /*
@@ -1442,10 +1428,12 @@ static void ProjectZero_connEvtCB(Gap_ConnEventRpt_t *pReport)
 /**
  * Callback from GAP Role indicating a role state change.
  */
-static void user_gapStateChangeCB(gaprole_States_t newState)
+static void user_gapStateChangeCB( gaprole_States_t newState )
 {
-  Log_info1("(CB) GAP State change: %d, Sending msg to app.", (IArg)newState);
-  user_enqueueRawAppMsg( APP_MSG_GAP_STATE_CHANGE, (uint8_t *)&newState, sizeof(newState) );
+    Log_info1("(CB) GAP State change: %d, Sending msg to app.",
+              (IArg )newState);
+    user_enqueueRawAppMsg(APP_MSG_GAP_STATE_CHANGE, (uint8_t *) &newState,
+                          sizeof(newState));
 }
 
 /*
@@ -1458,20 +1446,18 @@ static void user_gapStateChangeCB(gaprole_States_t newState)
  *
  * @return  none
  */
-static void user_gapBondMgr_passcodeCB(uint8_t *deviceAddr, uint16_t connHandle,
-                                       uint8_t uiInputs, uint8_t uiOutputs, uint32 numComparison)
+static void user_gapBondMgr_passcodeCB( uint8_t *deviceAddr,
+                                        uint16_t connHandle, uint8_t uiInputs,
+                                        uint8_t uiOutputs,
+                                        uint32 numComparison )
 {
-  passcode_req_t req =
-  {
-    .connHandle = connHandle,
-    .uiInputs = uiInputs,
-    .uiOutputs = uiOutputs,
-    .numComparison = numComparison
-  };
+    passcode_req_t req = { .connHandle = connHandle, .uiInputs = uiInputs,
+                           .uiOutputs = uiOutputs, .numComparison =
+                                   numComparison };
 
-  // Defer handling of the passcode request to the application, in case
-  // user input is required, and because a BLE API must be used from Task.
-  user_enqueueRawAppMsg(APP_MSG_SEND_PASSCODE, (uint8_t *)&req, sizeof(req));
+    // Defer handling of the passcode request to the application, in case
+    // user input is required, and because a BLE API must be used from Task.
+    user_enqueueRawAppMsg(APP_MSG_SEND_PASSCODE, (uint8_t *) &req, sizeof(req));
 }
 
 /*
@@ -1483,31 +1469,31 @@ static void user_gapBondMgr_passcodeCB(uint8_t *deviceAddr, uint16_t connHandle,
  *
  * @return  none
  */
-static void user_gapBondMgr_pairStateCB(uint16_t connHandle, uint8_t state,
-                                        uint8_t status)
+static void user_gapBondMgr_pairStateCB( uint16_t connHandle, uint8_t state,
+                                         uint8_t status )
 {
-  if (state == GAPBOND_PAIRING_STATE_STARTED)
-  {
-    Log_info0("Pairing started");
-  }
-  else if (state == GAPBOND_PAIRING_STATE_COMPLETE)
-  {
-    if (status == SUCCESS)
+    if (state == GAPBOND_PAIRING_STATE_STARTED)
     {
-      Log_info0("Pairing completed successfully.");
+        Log_info0("Pairing started");
     }
-    else
+    else if (state == GAPBOND_PAIRING_STATE_COMPLETE)
     {
-      Log_error1("Pairing failed. Error: %02x", status);
+        if (status == SUCCESS)
+        {
+            Log_info0("Pairing completed successfully.");
+        }
+        else
+        {
+            Log_error1("Pairing failed. Error: %02x", status);
+        }
     }
-  }
-  else if (state == GAPBOND_PAIRING_STATE_BONDED)
-  {
-    if (status == SUCCESS)
+    else if (state == GAPBOND_PAIRING_STATE_BONDED)
     {
-     Log_info0("Re-established pairing from stored bond info.");
+        if (status == SUCCESS)
+        {
+            Log_info0("Re-established pairing from stored bond info.");
+        }
     }
-  }
 }
 
 /**
@@ -1517,11 +1503,12 @@ static void user_service_ValueChangeCB( uint16_t connHandle, uint16_t svcUuid,
                                         uint8_t paramID, uint8_t *pValue,
                                         uint16_t len )
 {
-  // See the service header file to compare paramID with characteristic.
-  Log_info2("(CB) Characteristic value change: svc(0x%04x) paramID(%d). "
-            "Sending msg to app.", (IArg)svcUuid, (IArg)paramID);
-  user_enqueueCharDataMsg(APP_MSG_SERVICE_WRITE, connHandle, svcUuid, paramID,
-                          pValue, len);
+    // See the service header file to compare paramID with characteristic.
+    Log_info2("(CB) Characteristic value change: svc(0x%04x) paramID(%d). "
+              "Sending msg to app.",
+              (IArg )svcUuid, (IArg )paramID);
+    user_enqueueCharDataMsg(APP_MSG_SERVICE_WRITE, connHandle, svcUuid, paramID,
+                            pValue, len);
 }
 
 /**
@@ -1531,10 +1518,11 @@ static void user_service_CfgChangeCB( uint16_t connHandle, uint16_t svcUuid,
                                       uint8_t paramID, uint8_t *pValue,
                                       uint16_t len )
 {
-  Log_info2("(CB) Char config change: svc(0x%04x) paramID(%d). "
-            "Sending msg to app.", (IArg)svcUuid, (IArg)paramID);
-  user_enqueueCharDataMsg(APP_MSG_SERVICE_CFG, connHandle, svcUuid,
-                          paramID, pValue, len);
+    Log_info2("(CB) Char config change: svc(0x%04x) paramID(%d). "
+              "Sending msg to app.",
+              (IArg )svcUuid, (IArg )paramID);
+    user_enqueueCharDataMsg(APP_MSG_SERVICE_CFG, connHandle, svcUuid, paramID,
+                            pValue, len);
 }
 
 /*
@@ -1548,71 +1536,88 @@ static void user_service_CfgChangeCB( uint16_t connHandle, uint16_t svcUuid,
  *
  * @param  buttonId    The pin being debounced
  */
-static void buttonDebounceSwiFxn(UArg buttonId)
+static void buttonDebounceSwiFxn( UArg buttonId )
 {
-  // Used to send message to app
-  button_state_t buttonMsg = { .pinId = buttonId };
-  uint8_t        sendMsg   = FALSE;
+    // Used to send message to app
+    button_state_t buttonMsg = { .pinId = buttonId };
+    uint8_t sendMsg = FALSE;
 
-  // Get current value of the button pin after the clock timeout
-  uint8_t buttonPinVal = PIN_getInputValue(buttonId);
+    // Get current value of the button pin after the clock timeout
+    uint8_t buttonPinVal = PIN_getInputValue(buttonId);
 
-  // Set interrupt direction to opposite of debounced state
-  // If button is now released (button is active low, so release is high)
-  if (buttonPinVal)
-  {
-    // Enable negative edge interrupts to wait for press
-    PIN_setConfig(buttonPinHandle, PIN_BM_IRQ, buttonId | PIN_IRQ_NEGEDGE);
-  }
-  else
-  {
-    // Enable positive edge interrupts to wait for relesae
-    PIN_setConfig(buttonPinHandle, PIN_BM_IRQ, buttonId | PIN_IRQ_POSEDGE);
-  }
+    // Set interrupt direction to opposite of debounced state
+    // If button is now released (button is active low, so release is high)
+    if (buttonPinVal)
+    {
+        // Enable negative edge interrupts to wait for press
+        PIN_setConfig(buttonPinHandle, PIN_BM_IRQ, buttonId | PIN_IRQ_NEGEDGE);
+    }
+    else
+    {
+        // Enable positive edge interrupts to wait for relesae
+        PIN_setConfig(buttonPinHandle, PIN_BM_IRQ, buttonId | PIN_IRQ_POSEDGE);
+    }
 
-  switch(buttonId)
-  {
-    case Board_BUTTON0:
-      // If button is now released (buttonPinVal is active low, so release is 1)
-      // and button state was pressed (buttonstate is active high so press is 1)
-      if (buttonPinVal && button0State)
-      {
-        // Button was released
-        buttonMsg.state = button0State = 0;
-        sendMsg = TRUE;
-      }
-      else if (!buttonPinVal && !button0State)
-      {
-        // Button was pressed
-        buttonMsg.state = button0State = 1;
-        sendMsg = TRUE;
-      }
-      break;
+    switch (buttonId)
+    {
+        case Board_BUTTON0:
+            // If button is now released (buttonPinVal is active low, so release is 1)
+            // and button state was pressed (buttonstate is active high so press is 1)
+            if (buttonPinVal && button0State)
+            {
+                // Button was released
+                buttonMsg.state = button0State = 0;
+                sendMsg = TRUE;
+            }
+            else if (!buttonPinVal && !button0State)
+            {
+                // Button was pressed
+                buttonMsg.state = button0State = 1;
+                sendMsg = TRUE;
+            }
+            break;
 
-    case Board_BUTTON1:
-      // If button is now released (buttonPinVal is active low, so release is 1)
-      // and button state was pressed (buttonstate is active high so press is 1)
-      if (buttonPinVal && button1State)
-      {
-        // Button was released
-        buttonMsg.state = button1State = 0;
-        sendMsg = TRUE;
-      }
-      else if (!buttonPinVal && !button1State)
-      {
-        // Button was pressed
-        buttonMsg.state = button1State = 1;
-        sendMsg = TRUE;
-      }
-      break;
-  }
+        case Board_BUTTON1:
+            // If button is now released (buttonPinVal is active low, so release is 1)
+            // and button state was pressed (buttonstate is active high so press is 1)
+            if (buttonPinVal && button1State)
+            {
+                // Button was released
+                buttonMsg.state = button1State = 0;
+                sendMsg = TRUE;
+            }
+            else if (!buttonPinVal && !button1State)
+            {
+                // Button was pressed
+                buttonMsg.state = button1State = 1;
+                sendMsg = TRUE;
+            }
+            break;
+    }
 
-  if (sendMsg == TRUE)
-  {
-    user_enqueueRawAppMsg(APP_MSG_BUTTON_DEBOUNCED,
-                      (uint8_t *)&buttonMsg, sizeof(buttonMsg));
-  }
+    if (sendMsg == TRUE)
+    {
+        user_enqueueRawAppMsg(APP_MSG_BUTTON_DEBOUNCED, (uint8_t *) &buttonMsg,
+                              sizeof(buttonMsg));
+    }
 }
+
+/*
+ * @fn      periodicClockTimeoutSwiFxn
+ *
+ * @brief   Callback from the periodic clock on timeout
+ *
+ * @param   arg - generic argument
+ *
+ * @return  none
+ */
+#ifdef LAB_4      // LAB_4 - Non-Volatile Memory
+static void periodicClockTimeoutSwiFxn( UArg arg ) {
+
+    // Notify the application.
+    Event_post(syncEvent, arg);
+}
+#endif /* LAB_4 */
 
 /*
  *  Callbacks from Hwi-context
@@ -1626,26 +1631,25 @@ static void buttonDebounceSwiFxn(UArg buttonId)
  * @param  handle    The PIN_Handle instance this is about
  * @param  pinId     The pin that generated the interrupt
  */
-static void buttonCallbackFxn(PIN_Handle handle, PIN_Id pinId)
+static void buttonCallbackFxn( PIN_Handle handle, PIN_Id pinId )
 {
-  Log_info1("Button interrupt: %s",
-            (IArg)((pinId == Board_BUTTON0)?"Button 0":"Button 1"));
+    Log_info1("Button interrupt: %s",
+              (IArg)((pinId == Board_BUTTON0)?"Button 0":"Button 1"));
 
-  // Disable interrupt on that pin for now. Re-enabled after debounce.
-  PIN_setConfig(handle, PIN_BM_IRQ, pinId | PIN_IRQ_DIS);
+    // Disable interrupt on that pin for now. Re-enabled after debounce.
+    PIN_setConfig(handle, PIN_BM_IRQ, pinId | PIN_IRQ_DIS);
 
-  // Start debounce timer
-  switch (pinId)
-  {
-    case Board_BUTTON0:
-      Clock_start(Clock_handle(&button0DebounceClock));
-      break;
-    case Board_BUTTON1:
-      Clock_start(Clock_handle(&button1DebounceClock));
-      break;
-  }
+    // Start debounce timer
+    switch (pinId)
+    {
+        case Board_BUTTON0:
+            Clock_start(Clock_handle(&button0DebounceClock));
+            break;
+        case Board_BUTTON1:
+            Clock_start(Clock_handle(&button1DebounceClock));
+            break;
+    }
 }
-
 
 /******************************************************************************
  *****************************************************************************
@@ -1674,40 +1678,40 @@ static void buttonCallbackFxn(PIN_Handle handle, PIN_Id pinId)
  * @param  len           Length of characteristic data
  */
 static void user_enqueueCharDataMsg( app_msg_types_t appMsgType,
-                                     uint16_t connHandle,
-                                     uint16_t serviceUUID, uint8_t paramID,
-                                     uint8_t *pValue, uint16_t len )
+                                     uint16_t connHandle, uint16_t serviceUUID,
+                                     uint8_t paramID, uint8_t *pValue,
+                                     uint16_t len )
 {
-  // Called in Stack's Task context, so can't do processing here.
-  // Send message to application message queue about received data.
-  uint16_t readLen = len; // How much data was written to the attribute
+    // Called in Stack's Task context, so can't do processing here.
+    // Send message to application message queue about received data.
+    uint16_t readLen = len; // How much data was written to the attribute
 
-  // Allocate memory for the message.
-  // Note: The pCharData message doesn't have to contain the data itself, as
-  //       that's stored in a variable in the service implementation.
-  //
-  //       However, to prevent data loss if a new value is received before the
-  //       service's container is read out via the GetParameter API is called,
-  //       we copy the characteristic's data now.
-  app_msg_t *pMsg = ICall_malloc( sizeof(app_msg_t) + sizeof(char_data_t) +
-                                  readLen );
+    // Allocate memory for the message.
+    // Note: The pCharData message doesn't have to contain the data itself, as
+    //       that's stored in a variable in the service implementation.
+    //
+    //       However, to prevent data loss if a new value is received before the
+    //       service's container is read out via the GetParameter API is called,
+    //       we copy the characteristic's data now.
+    app_msg_t *pMsg = ICall_malloc(
+            sizeof(app_msg_t) + sizeof(char_data_t) + readLen);
 
-  if (pMsg != NULL)
-  {
-    pMsg->type = appMsgType;
+    if (pMsg != NULL)
+    {
+        pMsg->type = appMsgType;
 
-    char_data_t *pCharData = (char_data_t *)pMsg->pdu;
-    pCharData->svcUUID = serviceUUID; // Use 16-bit part of UUID.
-    pCharData->paramID = paramID;
-    // Copy data from service now.
-    memcpy(pCharData->data, pValue, readLen);
-    // Update pCharData with how much data we received.
-    pCharData->dataLen = readLen;
-    // Enqueue the message using pointer to queue node element.
-    Queue_enqueue(hApplicationMsgQ, &pMsg->_elem);
-  // Let application know there's a message.
-  Event_post(syncEvent, PRZ_APP_MSG_EVT);
-  }
+        char_data_t *pCharData = (char_data_t *) pMsg->pdu;
+        pCharData->svcUUID = serviceUUID; // Use 16-bit part of UUID.
+        pCharData->paramID = paramID;
+        // Copy data from service now.
+        memcpy(pCharData->data, pValue, readLen);
+        // Update pCharData with how much data we received.
+        pCharData->dataLen = readLen;
+        // Enqueue the message using pointer to queue node element.
+        Queue_enqueue(hApplicationMsgQ, &pMsg->_elem);
+        // Let application know there's a message.
+        Event_post(syncEvent, PRZ_APP_MSG_EVT);
+    }
 }
 
 /*
@@ -1719,26 +1723,25 @@ static void user_enqueueCharDataMsg( app_msg_types_t appMsgType,
  * @oaram  *pValue       Pointer to characteristic value
  * @param  len           Length of characteristic data
  */
-static void user_enqueueRawAppMsg(app_msg_types_t appMsgType, uint8_t *pData,
-                                  uint16_t len)
+static void user_enqueueRawAppMsg( app_msg_types_t appMsgType, uint8_t *pData,
+                                   uint16_t len )
 {
-  // Allocate memory for the message.
-  app_msg_t *pMsg = ICall_malloc( sizeof(app_msg_t) + len );
+    // Allocate memory for the message.
+    app_msg_t *pMsg = ICall_malloc(sizeof(app_msg_t) + len);
 
-  if (pMsg != NULL)
-  {
-    pMsg->type = appMsgType;
+    if (pMsg != NULL)
+    {
+        pMsg->type = appMsgType;
 
-    // Copy data into message
-    memcpy(pMsg->pdu, pData, len);
+        // Copy data into message
+        memcpy(pMsg->pdu, pData, len);
 
-    // Enqueue the message using pointer to queue node element.
-    Queue_enqueue(hApplicationMsgQ, &pMsg->_elem);
+        // Enqueue the message using pointer to queue node element.
+        Queue_enqueue(hApplicationMsgQ, &pMsg->_elem);
 //    // Let application know there's a message.
-    Event_post(syncEvent, PRZ_APP_MSG_EVT);
-  }
+        Event_post(syncEvent, PRZ_APP_MSG_EVT);
+    }
 }
-
 
 /*
  * @brief  Convenience function for updating characteristic data via char_data_t
@@ -1748,20 +1751,21 @@ static void user_enqueueRawAppMsg(app_msg_types_t appMsgType, uint8_t *pData,
  *
  * @param  *pCharData  Pointer to struct with value to update.
  */
-static void user_updateCharVal(char_data_t *pCharData)
+static void user_updateCharVal( char_data_t *pCharData )
 {
-  switch(pCharData->svcUUID) {
-    case LED_SERVICE_SERV_UUID:
-      LedService_SetParameter(pCharData->paramID, pCharData->dataLen,
-                              pCharData->data);
-    break;
+    switch (pCharData->svcUUID)
+    {
+        case LED_SERVICE_SERV_UUID:
+            LedService_SetParameter(pCharData->paramID, pCharData->dataLen,
+                                    pCharData->data);
+            break;
 
-    case BUTTON_SERVICE_SERV_UUID:
-      ButtonService_SetParameter(pCharData->paramID, pCharData->dataLen,
-                                 pCharData->data);
-    break;
+        case BUTTON_SERVICE_SERV_UUID:
+            ButtonService_SetParameter(pCharData->paramID, pCharData->dataLen,
+                                       pCharData->data);
+            break;
 
-  }
+    }
 }
 
 /*
@@ -1774,28 +1778,32 @@ static void user_updateCharVal(char_data_t *pCharData)
  *
  * @return  array as string
  */
-char *Util_convertArrayToHexString(uint8_t const *src, uint8_t src_len,
-                                          uint8_t *dst, uint8_t dst_len)
+char *Util_convertArrayToHexString( uint8_t const *src, uint8_t src_len,
+                                    uint8_t *dst, uint8_t dst_len )
 {
-  char        hex[] = "0123456789ABCDEF";
-  uint8_t     *pStr = dst;
-  uint8_t     avail = dst_len-1;
+    char hex[] = "0123456789ABCDEF";
+    uint8_t *pStr = dst;
+    uint8_t avail = dst_len - 1;
 
-  memset(dst, 0, avail);
+    memset(dst, 0, avail);
 
-  while (src_len && avail > 3)
-  {
-    if (avail < dst_len-1) { *pStr++ = ':'; avail -= 1; };
-    *pStr++ = hex[*src >> 4];
-    *pStr++ = hex[*src++ & 0x0F];
-    avail -= 2;
-    src_len--;
-  }
+    while (src_len && avail > 3)
+    {
+        if (avail < dst_len - 1)
+        {
+            *pStr++ = ':';
+            avail -= 1;
+        };
+        *pStr++ = hex[*src >> 4];
+        *pStr++ = hex[*src++ & 0x0F];
+        avail -= 2;
+        src_len--;
+    }
 
-  if (src_len && avail)
-    *pStr++ = ':'; // Indicate not all data fit on line.
+    if (src_len && avail)
+        *pStr++ = ':'; // Indicate not all data fit on line.
 
-  return (char *)dst;
+    return (char *) dst;
 }
 
 #if defined(UARTLOG_ENABLE)
@@ -1806,29 +1814,34 @@ char *Util_convertArrayToHexString(uint8_t const *src, uint8_t src_len,
  *
  * @return  Pointer to null-terminated string with the adv local name.
  */
-static char *Util_getLocalNameStr(const uint8_t *data) {
-  uint8_t nuggetLen = 0;
-  uint8_t nuggetType = 0;
-  uint8_t advIdx = 0;
+static char *Util_getLocalNameStr( const uint8_t *data )
+{
+    uint8_t nuggetLen = 0;
+    uint8_t nuggetType = 0;
+    uint8_t advIdx = 0;
 
-  static char localNameStr[32] = { 0 };
-  memset(localNameStr, 0, sizeof(localNameStr));
+    static char localNameStr[32] = { 0 };
+    memset(localNameStr, 0, sizeof(localNameStr));
 
-  for (advIdx = 0; advIdx < 32;) {
-    nuggetLen = data[advIdx++];
-    nuggetType = data[advIdx];
-    if ( (nuggetType == GAP_ADTYPE_LOCAL_NAME_COMPLETE ||
-          nuggetType == GAP_ADTYPE_LOCAL_NAME_SHORT) && nuggetLen < 31) {
-      memcpy(localNameStr, &data[advIdx + 1], nuggetLen - 1);
-      break;
-    } else {
-      advIdx += nuggetLen;
+    for (advIdx = 0; advIdx < 32;)
+    {
+        nuggetLen = data[advIdx++];
+        nuggetType = data[advIdx];
+        if ((nuggetType == GAP_ADTYPE_LOCAL_NAME_COMPLETE
+                || nuggetType == GAP_ADTYPE_LOCAL_NAME_SHORT) && nuggetLen < 31)
+        {
+            memcpy(localNameStr, &data[advIdx + 1], nuggetLen - 1);
+            break;
+        }
+        else
+        {
+            advIdx += nuggetLen;
+        }
     }
-  }
 
-  return localNameStr;
+    return localNameStr;
 }
 #endif
 
 /*********************************************************************
-*********************************************************************/
+ *********************************************************************/
