@@ -149,9 +149,6 @@ extern "C"
 // Defaults
 // See also characteristic default values in lss_service.h, als_service.h
 //
-#define LSS_DEFAULT_NUM_STRINGS         NUM_LED_STRINGS
-#define LSS_DEFAULT_NUM_LEDS            NUM_LEDS_PER_STRING
-#define LSS_DEFAULT_FADE_PERIOD         4       // Set this small during testing, set to LSS_RFRATE_DEFAULT in production (20s)
 #define LSS_DEFAULT_PEND_TIMEOUT_MS     50      // Milliseconds
 
 //
