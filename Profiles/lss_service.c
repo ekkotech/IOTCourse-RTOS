@@ -108,7 +108,7 @@ static CONST gattAttrType_t LssServiceDecl = { ATT_UUID_SIZE, LssServiceUUID };
 static uint8_t lss_OFFONProps = GATT_PROP_READ | GATT_PROP_WRITE | GATT_PROP_WRITE_NO_RSP;
 
 // Characteristic "OFFON" Value variable
-static uint8_t lss_OFFONVal[LSS_OFFON_LEN] = { LSS_OFFON_DEFAULT };
+static uint8_t lss_OFFONVal[LSS_OFFON_LEN] = { LSS_DEFAULT_OFFON };
 
 // Length of data in characteristic "OFFON" Value variable, initialised to minimum size.
 static uint16_t lss_OFFONValLen = LSS_OFFON_LEN_MIN;
@@ -121,7 +121,7 @@ static uint8_t lss_OFFONUserDesc[7] = "Off/On\0";
 static uint8_t lss_RGBProps = GATT_PROP_READ | GATT_PROP_WRITE | GATT_PROP_WRITE_NO_RSP;
 
 // Characteristic "RGB" Value variable
-static uint8_t lss_RGBVal[LSS_RGB_LEN] = {LSS_RED_DEFAULT, LSS_GREEN_DEFAULT, LSS_BLUE_DEFAULT};
+static uint8_t lss_RGBVal[LSS_RGB_LEN] = {LSS_DEFAULT_RED, LSS_DEFAULT_GREEN, LSS_DEFAULT_BLUE};
 
 // Length of data in characteristic "RGB" Value variable, initialized to minimum size.
 static uint16_t lss_RGBValLen = LSS_RGB_LEN_MIN;

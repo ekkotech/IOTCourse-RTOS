@@ -55,9 +55,9 @@
 //
 // Default values for characteristics
 //
-#define ALS_LMTHRESH_DEFAULT        50          // Lux
-#define ALS_LMHYST_DEFAULT          10          // Percent
-#define ALS_LMOFFON_DEFAULT         1           // On
+#define ALS_DEFAULT_LMTHRESH        50          // Lux
+#define ALS_DEFAULT_LMHYST          10          // Percent
+#define ALS_DEFAULT_LMOFFON         1           // On
 
 //
 // Ambient Light Service UUIDs

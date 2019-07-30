@@ -130,7 +130,7 @@ static uint8_t als_LUMINUserDesc[10] = "Luminance\0";
 static uint8_t als_LMTHRESHProps = GATT_PROP_READ | GATT_PROP_WRITE | GATT_PROP_WRITE_NO_RSP;
 
 // Characteristic "LMTHRESH" Value variable
-static uint8_t als_LMTHRESHVal[ALS_LMTHRESH_LEN] = { ALS_LMTHRESH_DEFAULT };
+static uint8_t als_LMTHRESHVal[ALS_LMTHRESH_LEN] = { ALS_DEFAULT_LMTHRESH };
 
 // Length of data in characteristic "LMTHRESH" Value variable, initialised to minimum size
 static uint16_t als_LMTHRESHValLen = ALS_LMTHRESH_LEN_MIN;
@@ -143,7 +143,7 @@ static uint8_t als_LMTHRESHUserDesc[24] = "Light Monitor Threshold\0";
 static uint8_t als_LMHYSTProps = GATT_PROP_READ | GATT_PROP_WRITE | GATT_PROP_WRITE_NO_RSP;
 
 // Characteristic "LMHYST" Value variable
-static uint8_t als_LMHYSTVal[ALS_LMHYST_LEN] = { ALS_LMHYST_DEFAULT };
+static uint8_t als_LMHYSTVal[ALS_LMHYST_LEN] = { ALS_DEFAULT_LMHYST };
 
 // Length of data in characteristic "LMHYST" Value variable, initialised to minimum size
 static uint16_t als_LMHYSTValLen = ALS_LMHYST_LEN_MIN;
@@ -156,7 +156,7 @@ static uint8_t als_LMHYSTUserDesc[25] = "Light Monitor Hysteresis\0";
 static uint8_t als_LMOFFONProps = GATT_PROP_READ | GATT_PROP_WRITE | GATT_PROP_WRITE_NO_RSP;
 
 // Characteristic "LMOFFON" Value variable
-static uint8_t als_LMOFFONVal[ALS_LMOFFON_LEN] = { ALS_LMOFFON_DEFAULT };
+static uint8_t als_LMOFFONVal[ALS_LMOFFON_LEN] = { ALS_DEFAULT_LMOFFON };
 
 // Length of data in characteristic "LMOFFON" Value variable, initialised to minimum size
 static uint16_t als_LMOFFONValLen = ALS_LMOFFON_LEN_MIN;

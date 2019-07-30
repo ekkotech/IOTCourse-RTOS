@@ -154,16 +154,8 @@ static led_t ledsOff = { .green = 0, .red = 0, .blue = 0 };     // Utility for t
 //
 static uint8_t snvIsDirty = FALSE;
 static snv_config_t snvState = { .offOn = LSS_OFFON_DEFAULT,
-                            .colour = { .green = LSS_GREEN_DEFAULT, .red = LSS_RED_DEFAULT, .blue = LSS_BLUE_DEFAULT },
-                            .range = { .red = { .lowLimit = LSS_LIMMIN_DEFAULT, .highLimit = LSS_LIMMAX_DEFAULT },
-                                       .green = { .lowLimit = LSS_LIMMIN_DEFAULT, .highLimit = LSS_LIMMAX_DEFAULT },
-                                       .blue = { .lowLimit = LSS_LIMMIN_DEFAULT, .highLimit = LSS_LIMMAX_DEFAULT }
-                            },
-                            .program = LSS_PROG_DEFAULT,
-                            .fadePeriod = LSS_DEFAULT_FADE_PERIOD,
-                            .lmThreshold = LSS_LMTHRESH_DEFAULT,
-                            .lmHysteresis = LSS_LMHYST_DEFAULT,
-                            .lmOffOn = LSS_LMOFFON_DEFAULT };
+                            .colour = { .red = LSS_RED_DEFAULT, .green = LSS_GREEN_DEFAULT, .blue = LSS_BLUE_DEFAULT }
+                            };
 
 #endif /* LAB_4 */
 

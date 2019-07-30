@@ -64,10 +64,10 @@
 //
 // Default values for characteristics
 //
-#define LSS_OFFON_DEFAULT           0           // Off
-#define LSS_RED_DEFAULT             0x05        // Low-level red
-#define LSS_GREEN_DEFAULT           0x00        // Green off
-#define LSS_BLUE_DEFAULT            0x00        // Blue off
+#define LSS_DEFAULT_OFFON           0           // Off
+#define LSS_DEFAULT_RED             0x05        // Low-level red
+#define LSS_DEFAULT_GREEN           0x00        // Green off
+#define LSS_DEFAULT_BLUE            0x00        // Blue off
 
 //
 // LED String Service UUIDs
