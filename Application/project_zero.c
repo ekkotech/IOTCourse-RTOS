@@ -664,6 +664,34 @@ static void ProjectZero_init(void)
 
   // Register for GATT local events and ATT Responses pending for transmission
   GATT_RegisterForMsgs(selfEntity);
+
+  // ******************************************************************
+  // Application resource initialisation
+  // ******************************************************************
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+  // Construct the periodic clock
+  // Clock fires after an initial STARTUP_EVT_PERIOD milliseconds and every
+  // PERIODIC_EVT_PERIOD milliseconds after that
+  // Convert milliseconds to clock ticks by multiplying by (MSEC_PER_SEC / Clock_tickPeriod)
+  Clock_Params_init(&periodicClockParams);
+  periodicClockParams.arg = PRZ_PERIODIC_EVT;
+  periodicClockParams.period = PERIODIC_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod);
+  Clock_construct(&periodicClock, periodicClockTimeoutSwiFxn,
+                    STARTUP_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod), &periodicClockParams);
+  Clock_start(Clock_handle(&periodicClock));
+#endif /* LAB_4 */
+
+  //
+  // Service specific resource initialisation
+  //
+#ifdef LAB_3        // LAB_3 - LED String Driver Implementation
+  lss_Resource_Init();
+#endif /* LAB_3 */
+
+#ifdef LAB_5        // LAB_5 - Analogue Input
+  als_Resource_Init();
+#endif /* LAB_5 */
+
 }
 
 
