@@ -1,6 +1,11 @@
 /*** Code snippets for Lab 4 - Non-Volatile Memory ***/
 
+/*** In project_zero.c ***/
 /*** Insert into project_zero_init (bottom of) ***/
+
+    initSnv( SNV_APP_ID, &gSnvState );
+
+    // Insert clock construct code here
 
     // Construct the periodic clock
     // Clock fires after an initial STARTUP_EVT_PERIOD milliseconds and every
@@ -22,22 +27,49 @@
 
 /*** Insert into initSnv ***/
 
-    uint32_t status = osal_snv_read(appId, len, pData);
-    if (status != SUCCESS)
+    uint32_t status = osal_snv_read( appId, sizeof(snv_config_t), pSnvState );
+
+    if (status == SUCCESS) {
+        // SNV read OK, set characteristics
+        LssService_SetParameter( LSS_OFFON_ID, LSS_OFFON_LEN_MIN, &pSnvState->offOn );
+        LssService_SetParameter( LSS_RGB_ID, LSS_RGB_LEN_MIN, &pSnvState->colour );
+    }
+    else
     {
         // Most likely new firmware uploaded
         // Get default values from characteristics; write to SNV
         uint16_t charLen = LSS_OFFON_LEN_MIN;
-        snv_config_t *pSnv = (snv_config_t *)pData;
-        LssService_GetParameter( LSS_OFFON_ID, &charLen, &pSnv->offOn );
+        LssService_GetParameter( LSS_OFFON_ID, &charLen, &pSnvState->offOn );
         charLen = LSS_RGB_LEN_MIN;
-        LssService_GetParameter( LSS_RGB_ID, &charLen, &pSnv->colour );
-        
-        status = osal_snv_write(appId, len, pData);
+        LssService_GetParameter( LSS_RGB_ID, &charLen, &pSnvState->colour );
+
+        status = osal_snv_write(appId, sizeof(snv_config_t), pSnvState);
         if (status != SUCCESS)
         {
             Log_info0("Unable to write snvState to FLASH");
         }
+    }
+
+/*** End ***/
+
+/*** Insert into PRZ_PERIODIC_EVT handler ***/
+            if (events & PRZ_PERIODIC_EVT)
+            {
+                lss_ProcessPeriodicEvent( isFirstRun );
+                als_ProcessPeriodicEvent( isFirstRun );
+                saveSnvState( SNV_APP_ID, &gSnvState );
+            }
+/*** End ***/
+
+/*** Insert into lss_ProcessPeriodicEvent ***/
+    if (isFirstRun && (snvState.offOn == ON))
+    {
+        bulkUpdateLeds( &snvState.colour );
+        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+        isFirstRun = FALSE;
+    }
+    else {
+        saveSnvState( SNV_APP_ID, &snvState );
     }
 
 /*** End ***/
@@ -71,14 +103,13 @@
     //
     // Write out snv structure to SNV if it has changed
     //
-    if (snvIsDirty == true)
-    {
-        uint32_t status = osal_snv_write( appId, sizeof(snv_config_t), (uint8_t *)pState );
-        if (status == SUCCESS)
-        {
-            snvIsDirty = false;
+    if (gIsSnvDirty == TRUE) {
+        uint8_t result = osal_snv_write( appId, sizeof(snv_config_t), (uint8_t *)pState );
+        if (result == SUCCESS) {
+            gIsSnvDirty = FALSE;
         }
-        else
-        {   Log_info0("SNV write failed");}
+        else {
+            Log_info0( "ERROR: writing SNV");
+        }
     }
 /*** End ***/

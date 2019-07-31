@@ -59,7 +59,6 @@
 #include <driverlib/aux_adc.h>
 #include <driverlib/aux_wuc.h>
 
-//#include <xdc/runtime/Log.h>
 #include <xdc/runtime/Diags.h>
 #include <uartlog/UartLog.h>
 #include <osal_snv.h>
@@ -76,11 +75,6 @@
 /*********************************************************************
  * TYPEDEFS
  */
-
-/*********************************************************************
- * GLOBAL VARIABLES
- */
-extern ICall_SyncHandle syncEvent;
 
 /*********************************************************************
  * LOCAL VARIABLES
@@ -143,25 +137,10 @@ static rgb_char_t ledsOff = { .green = 0, .red = 0, .blue = 0 }; // Utility for 
 
 #endif /* LAB_3 */
 
-#ifdef LAB_4      // LAB_4 - Non-Volatile Memory
-//
-// Flag to handle any specific processing for the first periodic event
-//
-static uint8_t isFirstRun = TRUE;
-
-//
-// SNV state
-//
-static uint8_t snvIsDirty = FALSE;
-static snv_config_t snvState = { .offOn = 0,
-                                 .colour = { .red = 0, .green = 0, .blue = 0} };
-
-#endif /* LAB_4 */
-
 //
 // Indicates if light level is currently below off/on threshold
 //
-#ifdef LAB_5        // LAB_5 - Light Monitor Implementation
+#ifdef LAB_5        // LAB_5 - Analogue Input
 static bool isBelowLMThreshold = false;
 #endif /* LAB_5 */
 
@@ -211,13 +190,10 @@ static void waitOnSsiSendComplete( void );
 #endif /* LAB_3 */
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-static void initSnv( uint8_t appId, snv_config_t *pSnvState );
 static void updateSnvState( uint8_t charId, uint16_t len, uint8_t *pData );
-static void saveSnvState( uint8_t appId, snv_config_t *pState );
-//static void setCharacteristicsFromSnv( snv_config_t *pState );
 #endif /* LAB_4 */
 
-#ifdef LAB_5        // LAB_5 - Light Monitor Implementation
+#ifdef LAB_5        // LAB_5 - Analogue Input
 static void startProgram(uint8_t program);
 static void stopProgram(uint8_t program);
 static void checkLuminanceThreshold();
@@ -334,17 +310,8 @@ void lss_ProcessPeriodicEvent()
 
     Log_info0("In lss_ProcessPeriodicEvent");
 
-#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-    if (isFirstRun && (snvState.offOn == ON))
-    {
-        bulkUpdateLeds( &snvState.colour );
-        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
-        isFirstRun = FALSE;
-    }
-    else {
-        saveSnvState( SNV_APP_ID, &snvState );
-    }
-#endif /* LAB_4 */
+    // Insert handler code here
+
 
 //#ifdef LAB_3        // LAB_3 - LED String Driver Implementation
 //    if (isFirstRun == TRUE)
@@ -493,18 +460,6 @@ static void processRGBValueChange( char_data_t *pCharData )
     Log_info0( "In processRGBValueChange" );
 
     // Insert handler code here
-    if (pCharData->dataLen == sizeof(rgb_char_t))
-    {
-//        rgb_char_t *pRgb = (rgb_char_t *) pCharData->data;
-        updateSnvState( pCharData->paramID, pCharData->dataLen, pCharData->data );
-        if (snvState.offOn == ON) {
-            bulkUpdateLeds( (rgb_char_t *)pCharData->data );
-            writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
-        }
-    }
-    else {
-        Log_info0("Incorrect data size for RGB value change");
-    }
 
 #ifdef LAB_3x        // LAB_3 - LED String Driver Implementation
 
@@ -694,54 +649,6 @@ static void initDMA()
 }
 #endif /* LAB_3 */
 
-#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-/*
- * @fn      initSnv
- *
- * @brief   Initialises SNV memory
- *
- * @discussion  SNV state held in memory is initialised from SNV state held in FLASH if
- *          the SNV state in FLASH is valid. SNV state in memory is initialised statically
- *          to default settings. This static state is overwritten when SNV state is successfully
- *          read from FLASH.
- *          Each time that a new firmware image is uploaded, SNV state in FLASH is erased and
- *          a subsequent read will fail. In the event of a read failure, SNV state in FLASH is
- *          initialised with the statically defined SNV state in memory.
- *          In normal operation, after a power cycle or a reset, the SNV state in FLASH is
- *          loaded into memory.
- *
- * @param   appId - the ID for the SNV structure. Must be in the range 0x80 to 0x8F
- *          len - the number of bytes to read from FLASH
- *          pData - pointer to the memory area to load the FLASH data
- *
- * @return  none
- */
-static void initSnv(uint8_t appId, snv_config_t *pSnvState)
-{
-    // Add initialisation code here
-    uint32_t status = 
-
-    if (status == SUCCESS) {
-        // SNV read OK, set characteristics
-        
-        
-    }
-    else
-    {
-        // Most likely new firmware uploaded
-        // Get default values from characteristics; write to SNV
-        
-
-        
-        if (status != SUCCESS)
-        {
-            Log_info0("Unable to write snvState to FLASH");
-        }
-    }
-
-}
-#endif /* LAB_4 */
-
 #ifdef LAB_6        // LAB_6 - Random Fader Implementation
 /*
  * @fn      initTRNG
@@ -791,9 +698,6 @@ static void initResources()
     // Create Hwi
     // Only need a Hwi for SSI channel 1
  
-#ifdef LAB_4        // LAB_4 - Non-volatile memory
-    initSnv(SNV_APP_ID, &snvState);
-#endif /* LAB_4 */
 
 #ifdef LAB_6        // LAB_6 - Random Fader Implementation
     // Create the clock for the fader
@@ -909,27 +813,6 @@ static void waitOnSsiSendComplete()
 static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
 {
     // Insert handler code here
-    switch (charId)
-    {
-        case LSS_OFFON_ID:
-            if (len == LSS_OFFON_LEN_MIN)
-            {
-                snvState.offOn = *((offon_char_t *)pData);
-            }
-            break;
-
-        case LSS_RGB_ID:
-            if (len == LSS_RGB_LEN_MIN)
-            {
-                snvState.colour = *((rgb_char_t *)pData);
-            }
-            break;
-
-        default:
-            break;
-    }
-
-    snvIsDirty = true;
 
 }
 #endif /* LAB_4 */
@@ -968,34 +851,7 @@ static void saveSnvState( uint8_t appId, snv_config_t *pState )
 }
 #endif /* LAB_4 */
 
-#ifdef LAB_4        // LAB_4 - Non-volatile memory
-/*
- * @fn      setCharacteristicsFromSnv
- *
- * @brief   Updates characteristics values after a read from SNV
- *
- * @param   pState - pointer to the in-memory SNV state
- *
- * @return  none
- */
-//static void setCharacteristicsFromSnv(snv_config_t *pState)
-//{
-//
-//    LedStringService_SetParameter(LSS_OFFON_ID, member_size(snv_config_t, offOn), &snvState.offOn);
-//    // Translate SK6812 GRB colour to Bluetooth RGB colour
-//    rgb_char_t rgbColour =
-//    {   .red = snvState.colour.red, .green = snvState.colour.green, .blue = snvState.colour.blue};
-//    LedStringService_SetParameter(LSS_RGB_ID, member_size(snv_config_t, colour), &rgbColour);
-//    // How to handle these??
-////    LedStringService_SetParameter(LSS_LMTHRESH_ID, member_size(snv_config_t, lmThreshold), &snvState.lmThreshold);
-////    LedStringService_SetParameter(LSS_LMHYST_ID, member_size(snv_config_t, lmHysteresis), &snvState.lmHysteresis);
-////    LedStringService_SetParameter(LSS_LMOFFON_ID, member_size(snv_config_t, lmOffOn), &snvState.lmOffOn);
-//    // Set other characteristics as and when implemented
-//
-//}
-#endif /* LAB_4 */
-
-#ifdef LAB_5        // LAB_5 - Light Monitor implementation
+#ifdef LAB_5        // LAB_5 - Analogue Input
 /*
  * @fn      checkLuminanceThreshold
  *
@@ -1048,7 +904,7 @@ static void checkLuminanceThreshold()
  *
  * @return  none
  */
-#ifdef LAB_5        // LAB_5 - Light Monitor Implementation
+#ifdef LAB_5        // LAB_5 - Analogue Input
 static void startProgram(uint8_t program)
 {
 
@@ -1099,7 +955,7 @@ static void startProgram(uint8_t program)
  *
  * @return  none
  */
-#ifdef LAB_5        // LAB_5 - Light Monitor Implementation
+#ifdef LAB_5        // LAB_5 - Analogue Input
 static void stopProgram(uint8_t program)
 {
 

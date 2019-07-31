@@ -191,29 +191,13 @@ typedef uint8_t program_char_t;
 typedef uint8_t offon_char_t;
 
 // RGB characteristic
-typedef struct {
-    uint8_t red;
-    uint8_t green;
-    uint8_t blue;
-} rgb_char_t;
+typedef rgb_t rgb_char_t;
 
 // LIMIT characteristic
 typedef struct {
     uint8_t lowLimit;
     uint8_t highLimit;
 } limit_char_t;
-
-// RATE characteristic
-typedef uint8_t rate_char_t;
-
-// LMTHRESH characteristic
-typedef uint16_t lmthresh_char_t;
-
-// LMHYST characteristic
-typedef uint8_t lmhyst_char_t;
-
-// LMOFFON characteristic
-typedef uint8_t lmoffon_char_t;
 
 // SK6812 LED
 // The colour layout for the SK6812 LED (GRB) differs from the Bluetooth representation (RGB)
@@ -232,7 +216,6 @@ typedef struct bitStreamColour
     uint32_t blue;
 
 } bitStreamColour_t;
-
 
 //
 // ledBitStream is an overlay of the bitStream array and is used for bulk updating of the bitStream array
@@ -271,15 +254,6 @@ typedef struct dma_config
     uint32_t ui32Control;       //!< The channel control mode.
     uint32_t ui32Spare;         //!< An unused location.
 } dma_config_t;
-
-//
-// Non-volatile memory config
-//
-typedef struct snv_config {
-    uint8_t         offOn;
-    rgb_char_t      colour;
-} snv_config_t;
-
 
 //
 // Fade control structures

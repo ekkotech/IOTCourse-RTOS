@@ -145,6 +145,20 @@
 #define CONNECTION_EVENT_REGISTRATION_CAUSE(registerCause) (connectionEventRegisterCauseBitMap & registerCause )
 
 /*********************************************************************
+ * GLOBAL VARIABLES
+ */
+
+#ifdef LAB_4      // LAB_4 - Non-Volatile Memory
+//
+// SNV state
+//
+uint8_t gIsSnvDirty = FALSE;
+snv_config_t gSnvState = { .offOn = 0,
+                           .colour = { .red = 0, .green = 0, .blue = 0} };
+
+#endif /* LAB_4 */
+
+/*********************************************************************
  * LOCAL VARIABLES
  */
 
@@ -153,7 +167,7 @@ static ICall_EntityID selfEntity;
 
 // Event globally used to post local events and pend on system and
 // local events.
-static ICall_SyncHandle syncEvent;
+ICall_SyncHandle syncEvent;
 
 // Queue object used for application messages.
 static Queue_Struct applicationMsgQ;
@@ -164,6 +178,8 @@ Task_Struct przTask;
 Char przTaskStack[PRZ_TASK_STACK_SIZE];
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+// Flag to handle any specific processing for the first periodic event
+static uint8_t isFirstRun = TRUE;
 // PRZ task periodic clock
 static Clock_Struct periodicClock;
 static Clock_Params periodicClockParams;
@@ -284,12 +300,9 @@ static void user_ButtonService_CfgChangeHandler( char_data_t *pCharData );
 static void user_DataService_ValueChangeHandler( char_data_t *pCharData );
 static void user_DataService_CfgChangeHandler( char_data_t *pCharData );
 //
-//#ifdef LAB_2        // LAB_2 - Service configuration
-//static void user_LssService_ValueChangeHandler(char_data_t *pCharData);
-//static void user_AlsService_ValueChangeHandler(char_data_t *pCharData);
-//static void user_AlsService_CfgChangeHandler(char_data_t *pCharData);
-//#endif /* LAB_2 */
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+static void initSnv( uint8_t appId, snv_config_t *pSnvState );
+static void saveSnvState( uint8_t appId, snv_config_t *pState );
 static void periodicClockTimeoutSwiFxn();
 #endif /* LAB_4 */
 
@@ -657,7 +670,7 @@ static void ProjectZero_init( void )
     ButtonService_RegisterAppCBs(&user_Button_ServiceCBs);
     DataService_RegisterAppCBs(&user_Data_ServiceCBs);
 #ifdef LAB_2        // LAB_2 - Service configuration
-  // REgister App callbacks here
+  // Register App callbacks here
 #endif /* LAB_2 */
 
     // Placeholder variable for characteristic initialization
@@ -703,6 +716,8 @@ static void ProjectZero_init( void )
 #endif /* LAB_5 */
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+    // Insert initSnv here
+
     // Insert clock construct code here
 
     // Construct the periodic clock
@@ -777,9 +792,27 @@ static void ProjectZero_taskFxn( UArg a0, UArg a1 )
                 }
             }
 
-        // Free the received message.
-        ICall_free(pMsg);
-      }
+            // Process messages sent from another task or another context.
+            while (!Queue_empty(hApplicationMsgQ))
+            {
+                app_msg_t *pMsg = Queue_dequeue(hApplicationMsgQ);
+
+                // Process application-layer message probably sent from ourselves.
+                user_processApplicationMessage(pMsg);
+
+                // Free the received message.
+                ICall_free(pMsg);
+            }
+
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+            if (events & PRZ_PERIODIC_EVT)
+            {
+                lss_ProcessPeriodicEvent( isFirstRun );
+                als_ProcessPeriodicEvent( isFirstRun );
+                saveSnvState( SNV_APP_ID, &gSnvState );
+            }
+#endif /* LAB_4 */
+        }
     }
 }
 
@@ -1668,6 +1701,57 @@ static void buttonCallbackFxn( PIN_Handle handle, PIN_Id pinId )
  *
  ****************************************************************************
  *****************************************************************************/
+
+#ifdef LAB_4        // LAB_4 - Non-volatile memory
+/*
+ * @fn      saveSnvState
+ *
+ * @brief   Writes gSnvState in memory to FLASH if gSnvState has been written to since
+ *          the last write
+ *
+ * @param   appId - the ID for the SNV structure. Must be in the range 0x80 to 0x8F
+ * @param   len - the number of bytes to write
+ * @param   pData - pointer to the source data
+ *
+ * @return  none
+ */
+static void saveSnvState( uint8_t appId, snv_config_t *pState )
+{
+
+    // Insert handler code here
+
+}
+#endif /* LAB_4 */
+
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+/*
+ * @fn      initSnv
+ *
+ * @brief   Initialises SNV memory
+ *
+ * @discussion  SNV state held in memory is initialised from SNV state held in FLASH if
+ *          the SNV state in FLASH is valid. SNV state in memory is initialised statically
+ *          to default settings. This static state is overwritten when SNV state is successfully
+ *          read from FLASH.
+ *          Each time that a new firmware image is uploaded, SNV state in FLASH is erased and
+ *          a subsequent read will fail. In the event of a read failure, SNV state in FLASH is
+ *          initialised with the statically defined SNV state in memory.
+ *          In normal operation, after a power cycle or a reset, the SNV state in FLASH is
+ *          loaded into memory.
+ *
+ * @param   appId - the ID for the SNV structure. Must be in the range 0x80 to 0x8F
+ *          len - the number of bytes to read from FLASH
+ *          pData - pointer to the memory area to load the FLASH data
+ *
+ * @return  none
+ */
+static void initSnv(uint8_t appId, snv_config_t *pSnvState)
+{
+
+    // Insert initialisation code here
+
+}
+#endif /* LAB_4 */
 
 /*
  * @brief  Generic message constructor for characteristic data.

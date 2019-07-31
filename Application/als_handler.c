@@ -75,11 +75,11 @@
 #ifdef LAB_2        // LAB_2 - Service Configuration
 void user_AlsService_ValueChangeHandler(char_data_t *pCharData);
 void user_AlsService_CfgChangeHandler(char_data_t *pCharData);
-static void processLMThresholdValueChange(char_data_t *pCharData);
-static void processLMHysteresisValueChange(char_data_t *pCharData);
-static void processLMOffOnValueChange(char_data_t *pCharData);
-static void processLuminCfgChange(char_data_t *pCharDate);
 #endif /* LAB_2 */
+
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+void als_ProcessPeriodicEvent( uint8_t isFirstRun );
+#endif /* LAB_4 */
 
 #ifdef LAB_5        // LAB_5 - Analogue Input
 void als_Hardware_Init();
@@ -89,6 +89,17 @@ void als_ProcessPeriodicEvent();
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
+#ifdef LAB_2        // LAB_2 - Service Configuration
+static void processLMThresholdValueChange(char_data_t *pCharData);
+static void processLMHysteresisValueChange(char_data_t *pCharData);
+static void processLMOffOnValueChange(char_data_t *pCharData);
+static void processLuminCfgChange(char_data_t *pCharDate);
+#endif /* LAB_2 */
+
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+static void updateSnvState( uint8_t charId, uint16_t len, uint8_t *pData );
+#endif /* LAB_4 */
+
 #ifdef LAB_5        // LAB_5 - Analogue Input
 static void initADC(void);
 static void updateLuminance();
@@ -97,6 +108,27 @@ static void updateLuminance();
 /*********************************************************************
  * PUBLIC FUNCTIONS
  */
+
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+/*
+ * @fn      als_ProcessPeriodicEvent
+ *
+ * @brief   Perform any required processing in a periodic basis
+ *
+ * @param   none
+ *
+ * @return  none
+ *
+ */
+void als_ProcessPeriodicEvent( uint8_t isFirstRun )
+{
+
+    Log_info0("In als_ProcessPeriodicEvent");
+
+    // Insert handler code here
+
+}
+#endif /* LAB_4 */
 
 #ifdef LAB_5        // LAB_5 - Analogue Input
 /*
@@ -224,12 +256,13 @@ static void processLMThresholdValueChange(char_data_t *pCharData)
 {
     Log_info0("In processLMThresholdValueChange");
 
-#ifdef LAB_5        // LAB_5 - Light Monitor Implementation
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
     if (pCharData->dataLen == sizeof(lmthresh_char_t))
     {
-        updateSnvState(LSS_LMTHRESH_ID, pCharData->dataLen, pCharData->data);
+        updateSnvState(pCharData->paramID, pCharData->dataLen, pCharData->data);
     }
-#endif /* LAB_5 */
+#endif /* LAB_4 */
+
 }
 
 /*
@@ -245,12 +278,12 @@ static void processLMHysteresisValueChange(char_data_t *pCharData)
 {
     Log_info0("In processLMHysteresisValueChange");
 
-#ifdef LAB_5        // LAB_5 - Light Monitor Implementation
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
     if (pCharData->dataLen == sizeof(lmhyst_char_t))
     {
-        updateSnvState(LSS_LMHYST_ID, pCharData->dataLen, pCharData->data);
+        updateSnvState(pCharData->paramID, pCharData->dataLen, pCharData->data);
     }
-#endif /* LAB_5 */
+#endif /* LAB_4 */
 
 }
 
@@ -266,6 +299,13 @@ static void processLMHysteresisValueChange(char_data_t *pCharData)
 static void processLMOffOnValueChange(char_data_t *pCharData)
 {
     Log_info0("In processLMOffOnValueChange");
+
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+    if (pCharData->dataLen == sizeof(lmhyst_char_t))
+    {
+        updateSnvState(pCharData->paramID, pCharData->dataLen, pCharData->data);
+    }
+#endif /* LAB_4 */
 
 #ifdef LAB_5        // LAB_5 - Light Monitor Implementation
     uint8_t newState;
@@ -386,6 +426,32 @@ static void initADC(void) {
  *
  ****************************************************************************
  *****************************************************************************/
+
+#ifdef LAB_4        // LAB_4 - Non-volatile memory
+/*
+ * @fn      updateSnvState
+ *
+ * @brief   Updates an element in snvState and sets dirty flag true
+ *
+ * @param   charId - the characteristic ID
+ * @param   len - the number of bytes to write
+ * @param   pData - pointer to the source data
+ *
+ * @return  none
+ */
+static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
+{
+    // Insert handler code here
+    switch (charId) {
+        case ALS_LMTHRESH_ID:
+            break;
+        case ALS_LMHYST_ID:
+            break;
+        case ALS_LMOFFON_ID:
+            break;
+    }
+}
+#endif /* LAB_4 */
 
 #ifdef LAB_5        // LAB_5 - Analogue Input
 /*********************************************************************

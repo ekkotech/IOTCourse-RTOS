@@ -35,6 +35,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
+#ifndef APPLICATION_COMMON_H_
+#define APPLICATION_COMMON_H_
 
 /*********************************************************************
  * INCLUDES
@@ -48,11 +50,21 @@
 
 #include <ti/drivers/PIN.h>
 
+#include "icall_ble_api.h"
+#include <icall.h>
+
+#include "project_zero.h"
+
+/*********************************************************************
+ * GLOBAL VARIABLES
+ */
+extern ICall_SyncHandle syncEvent;
+extern snv_config_t gSnvState;
+extern uint8_t gIsSnvDirty;
+
 /*********************************************************************
  * CONSTANTS
  */
-#ifndef APPLICATION_COMMON_H_
-#define APPLICATION_COMMON_H_
 
 //
 // Debug logging levels

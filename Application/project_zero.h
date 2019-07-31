@@ -62,10 +62,24 @@ extern "C"
 /*********************************************************************
  * TYPEDEFS
  */
+typedef struct rgb {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+} rgb_t;
+
+typedef struct snv_config {
+    uint8_t    offOn;
+    rgb_t      colour;
+} snv_config_t;
 
 /*********************************************************************
  * CONSTANTS
  */
+//
+// Non-volatile memory related
+//
+#define SNV_APP_ID                      0x80
 
 /*********************************************************************
  * MACROS
