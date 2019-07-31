@@ -64,7 +64,7 @@
 //
 // Default values for characteristics
 //
-#define LSS_DEFAULT_OFFON           0           // Off
+#define LSS_DEFAULT_OFFON           0x01        // On
 #define LSS_DEFAULT_RED             0x05        // Low-level red
 #define LSS_DEFAULT_GREEN           0x00        // Green off
 #define LSS_DEFAULT_BLUE            0x00        // Blue off
