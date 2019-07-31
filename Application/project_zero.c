@@ -1624,8 +1624,8 @@ static void buttonDebounceSwiFxn( UArg buttonId )
 #ifdef LAB_4      // LAB_4 - Non-Volatile Memory
 static void periodicClockTimeoutSwiFxn( UArg arg ) {
 
-    // Notify the application.
-    Event_post(syncEvent, arg);
+    // Insert periodic clock handling code here
+    
 }
 #endif /* LAB_4 */
 

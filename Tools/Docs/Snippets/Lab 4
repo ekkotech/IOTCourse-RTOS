@@ -15,6 +15,11 @@
     
 /*** End ***/
 
+/*** Insert into periodicClockTimeoutSwiFxn ***/
+    // Notify the application.
+    Event_post(syncEvent, arg);
+/*** End ***/
+
 /*** Insert into initSnv ***/
 
     uint32_t status = osal_snv_read(appId, len, pData);
