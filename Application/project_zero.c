@@ -702,6 +702,16 @@ static void ProjectZero_init( void )
     als_Resource_Init();
 #endif /* LAB_5 */
 
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+    // Insert clock construct code here
+
+    // Construct the periodic clock
+    // Clock fires after an initial STARTUP_EVT_PERIOD milliseconds and every
+    // PERIODIC_EVT_PERIOD milliseconds after that
+    // Convert milliseconds to clock ticks by multiplying by (MSEC_PER_SEC / Clock_tickPeriod)
+
+#endif /* LAB_4 */
+
 }
 
 /*
