@@ -719,6 +719,25 @@ static void initDMA()
 static void initSnv(uint8_t appId, snv_config_t *pSnvState)
 {
     // Add initialisation code here
+    uint32_t status = 
+
+    if (status == SUCCESS) {
+        // SNV read OK, set characteristics
+        
+        
+    }
+    else
+    {
+        // Most likely new firmware uploaded
+        // Get default values from characteristics; write to SNV
+        
+
+        
+        if (status != SUCCESS)
+        {
+            Log_info0("Unable to write snvState to FLASH");
+        }
+    }
 
 }
 #endif /* LAB_4 */
