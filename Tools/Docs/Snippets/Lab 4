@@ -17,9 +17,7 @@
 
 /*** Insert into initSnv ***/
 
-    uint32_t status = SUCCESS;
-
-    status = osal_snv_read(appId, len, pData);
+    uint32_t status = osal_snv_read(appId, len, pData);
     if (status != SUCCESS)
     {
         // Most likely new firmware uploaded
