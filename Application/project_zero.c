@@ -153,9 +153,12 @@
 // SNV state
 //
 uint8_t gIsSnvDirty = FALSE;
-snv_config_t gSnvState = { .offOn = 0,
-                           .colour = { .red = 0, .green = 0, .blue = 0} };
-
+snv_config_t gSnvState =
+{
+     .offOn = 0,
+     .colour = { .red = 0, .green = 0, .blue = 0},
+     // Add other vars here as needed
+};
 #endif /* LAB_4 */
 
 /*********************************************************************

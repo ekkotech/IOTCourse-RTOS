@@ -27,7 +27,7 @@
 
 /*** Insert into initSnv ***/
 
-    uint32_t status = osal_snv_read( appId, sizeof(snv_config_t), pSnvState );
+    uint8_t status = osal_snv_read( appId, sizeof(snv_config_t), pSnvState );
 
     if (status == SUCCESS) {
         // SNV read OK, set characteristics
