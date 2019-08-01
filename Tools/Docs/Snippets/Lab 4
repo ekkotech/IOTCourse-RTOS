@@ -11,12 +11,11 @@
     // Clock fires after an initial STARTUP_EVT_PERIOD milliseconds and every
     // PERIODIC_EVT_PERIOD milliseconds after that
     // Convert milliseconds to clock ticks by multiplying by (MSEC_PER_SEC / Clock_tickPeriod)
-    Clock_Params_init(&periodicClockParams);
     periodicClockParams.arg = PRZ_PERIODIC_EVT;
     periodicClockParams.period = PERIODIC_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod);
+    periodicClockParams.startFlag = true;
     Clock_construct(&periodicClock, periodicClockTimeoutSwiFxn,
                     STARTUP_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod), &periodicClockParams);
-    Clock_start(Clock_handle(&periodicClock));
     
 /*** End ***/
 
@@ -62,14 +61,14 @@
 /*** End ***/
 
 /*** Insert into lss_ProcessPeriodicEvent ***/
-    if (isFirstRun && (snvState.offOn == ON))
+    if (isFirstRun && (gSnvState.offOn == ON))
     {
-        bulkUpdateLeds( &snvState.colour );
+        bulkUpdateLeds( &gSnvState.colour );
         writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
         isFirstRun = FALSE;
     }
     else {
-        saveSnvState( SNV_APP_ID, &snvState );
+        saveSnvState( SNV_APP_ID, &gSnvState );
     }
 
 /*** End ***/
@@ -80,14 +79,14 @@
         case LSS_OFFON_ID:
             if (len == LSS_OFFON_LEN_MIN)
             {
-                snvState.offOn = *((offon_char_t *)pData);
+                gSnvState.offOn = *((offon_char_t *)pData);
             }
             break;
 
         case LSS_RGB_ID:
             if (len == LSS_RGB_LEN_MIN)
             {
-                snvState.colour = *((rgb_char_t *)pData);
+                gSnvState.colour = *((rgb_char_t *)pData);
             }
             break;
         
@@ -103,10 +102,10 @@
     //
     // Write out snv structure to SNV if it has changed
     //
-    if (gIsSnvDirty == TRUE) {
+    if (gIsSnvDirty == true) {
         uint8_t result = osal_snv_write( appId, sizeof(snv_config_t), (uint8_t *)pState );
         if (result == SUCCESS) {
-            gIsSnvDirty = FALSE;
+            gIsSnvDirty = false;
         }
         else {
             Log_info0( "ERROR: writing SNV");
