@@ -152,13 +152,12 @@
 //
 // SNV state
 //
-uint8_t gIsSnvDirty = FALSE;
-snv_config_t gSnvState =
-{
-     .offOn = 0,
-     .colour = { .red = 0, .green = 0, .blue = 0},
-     // Add other vars here as needed
-};
+uint8_t gIsSnvDirty = false;
+snv_config_t gSnvState = { .offOn = 0,
+                           .colour = { .red = 0, .green = 0, .blue = 0},
+                           // Add other vars here as needed
+                         };
+
 #endif /* LAB_4 */
 
 /*********************************************************************
@@ -181,8 +180,6 @@ Task_Struct przTask;
 Char przTaskStack[PRZ_TASK_STACK_SIZE];
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-// Flag to handle any specific processing for the first periodic event
-static uint8_t isFirstRun = TRUE;
 // PRZ task periodic clock
 static Clock_Struct periodicClock;
 static Clock_Params periodicClockParams;
@@ -808,12 +805,8 @@ static void ProjectZero_taskFxn( UArg a0, UArg a1 )
             }
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-            if (events & PRZ_PERIODIC_EVT)
-            {
-                lss_ProcessPeriodicEvent( isFirstRun );
-                als_ProcessPeriodicEvent( isFirstRun );
-                saveSnvState( SNV_APP_ID, &gSnvState );
-            }
+            // Insert event handling code here
+
 #endif /* LAB_4 */
         }
     }
@@ -1722,6 +1715,10 @@ static void saveSnvState( uint8_t appId, snv_config_t *pState )
 {
 
     // Insert handler code here
+
+    //
+    // Write out snv structure to SNV if it has changed
+    //
 
 }
 #endif /* LAB_4 */

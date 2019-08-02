@@ -51,6 +51,7 @@
 
 /*** Insert into initResources function ***/
     // Create DMA complete semaphore
+    Semaphore_Params_init(&dmaCompleteSemaParams);
     dmaCompleteSemaParams.mode = Semaphore_Mode_BINARY;
     Semaphore_construct(&dmaCompleteSema, 0, &dmaCompleteSemaParams);
     hDmaCompleteSema = Semaphore_handle(&dmaCompleteSema);

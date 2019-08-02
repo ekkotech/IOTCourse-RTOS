@@ -137,6 +137,11 @@ static rgb_char_t ledsOff = { .green = 0, .red = 0, .blue = 0 }; // Utility for 
 
 #endif /* LAB_3 */
 
+#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+// Used to trigger setting of LEDs on start-up
+static uint8_t isFirstRun = true;
+#endif /* LAB_4  */
+
 //
 // Indicates if light level is currently below off/on threshold
 //
@@ -161,10 +166,6 @@ void user_LssService_ValueChangeHandler( char_data_t *pCharData );
 void lss_Hardware_Init();
 void lss_Resource_Init();
 #endif /* LAB_3 */
-
-#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-void lss_ProcessPeriodicEvent();
-#endif /* LAB_4 */
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -382,13 +383,10 @@ static void processOffOnValueChange( char_data_t *pCharData )
     Log_info0( "In processOffOnValueChange" );
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-    // Insert handler code here
     if (pCharData->dataLen == sizeof(offon_char_t))
     {
-        updateSnvState( pCharData->paramID, pCharData->dataLen, pCharData->data );
-        rgb_char_t *pColour = *((offon_char_t *)pCharData->data) == ON ? &snvState.colour : &ledsOff;
-        bulkUpdateLeds( pColour );
-        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+    // Insert handler code here
+
     }
     else {
         Log_info0("Invalid length for offOn data");
@@ -459,7 +457,17 @@ static void processRGBValueChange( char_data_t *pCharData )
 {
     Log_info0( "In processRGBValueChange" );
 
-    // Insert handler code here
+    if (pCharData->dataLen == sizeof(rgb_char_t))
+    {
+     // Insert handler code here
+ 
+    }
+    else {
+        Log_info0("Incorrect data size for RGB value change");
+    }
+
+
+
 
 #ifdef LAB_3x        // LAB_3 - LED String Driver Implementation
 

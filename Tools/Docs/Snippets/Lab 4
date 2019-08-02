@@ -1,6 +1,19 @@
 /*** Code snippets for Lab 4 - Non-Volatile Memory ***/
 
 /*** In project_zero.c ***/
+
+/*** Global state ***/
+//
+// SNV state
+//
+uint8_t gIsSnvDirty = false;
+snv_config_t gSnvState = { .offOn = 0,
+                           .colour = { .red = 0, .green = 0, .blue = 0},
+                           // Add other vars here as needed
+                         };
+
+/*** End ***/
+
 /*** Insert into project_zero_init (bottom of) ***/
 
     initSnv( SNV_APP_ID, &gSnvState );
@@ -11,6 +24,7 @@
     // Clock fires after an initial STARTUP_EVT_PERIOD milliseconds and every
     // PERIODIC_EVT_PERIOD milliseconds after that
     // Convert milliseconds to clock ticks by multiplying by (MSEC_PER_SEC / Clock_tickPeriod)
+    Clock_Params_init(&periodicClockParams);
     periodicClockParams.arg = PRZ_PERIODIC_EVT;
     periodicClockParams.period = PERIODIC_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod);
     periodicClockParams.startFlag = true;
@@ -60,6 +74,21 @@
             }
 /*** End ***/
 
+/*** Insert into saveSnvState ***/
+    //
+    // Write out snv structure to SNV if it has changed
+    //
+    if (gIsSnvDirty == true) {
+        uint8_t result = osal_snv_write( appId, sizeof(snv_config_t), (uint8_t *)pState );
+        if (result == SUCCESS) {
+            gIsSnvDirty = false;
+        }
+        else {
+            Log_info0( "ERROR: writing SNV");
+        }
+    }
+/*** End ***/
+
 /*** Insert into lss_ProcessPeriodicEvent ***/
     if (isFirstRun && (gSnvState.offOn == ON))
     {
@@ -70,6 +99,37 @@
     else {
         saveSnvState( SNV_APP_ID, &gSnvState );
     }
+
+/*** End ***/
+
+/*** Insert into processOffOnValueChange ***/
+
+    if (pCharData->dataLen == sizeof(offon_char_t))
+    {
+        updateSnvState( pCharData->paramID, pCharData->dataLen, pCharData->data );
+        rgb_char_t *pColour = *((offon_char_t *)pCharData->data) == ON ? &gSnvState.colour : &ledsOff;
+        bulkUpdateLeds( pColour );
+        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+    }
+    else {
+        Log_info0("Invalid length for offOn data");
+    }
+
+/*** End ***/
+
+/*** Insert into processRGBValueChange ***/
+    if (pCharData->dataLen == sizeof(rgb_char_t))
+    {
+        updateSnvState( pCharData->paramID, pCharData->dataLen, pCharData->data );
+        if (gSnvState.offOn == ON) {
+            bulkUpdateLeds( (rgb_char_t *)pCharData->data );
+            writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
+        }
+    }
+    else {
+        Log_info0("Incorrect data size for RGB value change");
+    }
+
 
 /*** End ***/
 
@@ -89,26 +149,12 @@
                 gSnvState.colour = *((rgb_char_t *)pData);
             }
             break;
-        
+
         default:
             break;
     }
 
-    snvIsDirty = true;
+    gIsSnvDirty = true;
 
 /*** End ***/
 
-/*** Insert into saveSnvState ***/
-    //
-    // Write out snv structure to SNV if it has changed
-    //
-    if (gIsSnvDirty == true) {
-        uint8_t result = osal_snv_write( appId, sizeof(snv_config_t), (uint8_t *)pState );
-        if (result == SUCCESS) {
-            gIsSnvDirty = false;
-        }
-        else {
-            Log_info0( "ERROR: writing SNV");
-        }
-    }
-/*** End ***/
