@@ -15,27 +15,9 @@ snv_config_t gSnvState = { .offOn = 0,
 /*** End ***/
 
 /*** Insert into project_zero_init (bottom of) ***/
-
+    // Insert initSnv here
     initSnv( SNV_APP_ID, &gSnvState );
-
-    // Insert clock construct code here
-
-    // Construct the periodic clock
-    // Clock fires after an initial STARTUP_EVT_PERIOD milliseconds and every
-    // PERIODIC_EVT_PERIOD milliseconds after that
-    // Convert milliseconds to clock ticks by multiplying by (MSEC_PER_SEC / Clock_tickPeriod)
-    Clock_Params_init(&periodicClockParams);
-    periodicClockParams.arg = PRZ_PERIODIC_EVT;
-    periodicClockParams.period = PERIODIC_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod);
-    periodicClockParams.startFlag = true;
-    Clock_construct(&periodicClock, periodicClockTimeoutSwiFxn,
-                    STARTUP_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod), &periodicClockParams);
     
-/*** End ***/
-
-/*** Insert into periodicClockTimeoutSwiFxn ***/
-    // Notify the application.
-    Event_post(syncEvent, arg);
 /*** End ***/
 
 /*** Insert into initSnv ***/
@@ -65,11 +47,37 @@ snv_config_t gSnvState = { .offOn = 0,
 
 /*** End ***/
 
+/*** Insert into local variables section ***/
+static Clock_Params periodicClockParams;
+static Clock_Struct periodicClock;
+/*** End ***/
+
+/*** Insert into project_zero_init (bottom of) ***/
+    // Insert clock construct code here
+
+    // Construct the periodic clock
+    // Clock fires after an initial STARTUP_EVT_PERIOD milliseconds and every
+    // PERIODIC_EVT_PERIOD milliseconds after that
+    // Convert milliseconds to clock ticks by multiplying by (MSEC_PER_SEC / Clock_tickPeriod)
+    Clock_Params_init(&periodicClockParams);
+    periodicClockParams.arg = PRZ_PERIODIC_EVT;
+    periodicClockParams.period = PERIODIC_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod);
+    periodicClockParams.startFlag = true;
+    Clock_construct(&periodicClock, periodicClockTimeoutSwiFxn,
+                    STARTUP_EVT_PERIOD * (MSEC_PER_SEC / Clock_tickPeriod), &periodicClockParams);
+    
+/*** End ***/
+
+/*** Insert into periodicClockTimeoutSwiFxn ***/
+    // Notify the application.
+    Event_post(syncEvent, arg);
+/*** End ***/
+
 /*** Insert into PRZ_PERIODIC_EVT handler ***/
             if (events & PRZ_PERIODIC_EVT)
             {
-                lss_ProcessPeriodicEvent( isFirstRun );
-                als_ProcessPeriodicEvent( isFirstRun );
+                lss_ProcessPeriodicEvent();
+                als_ProcessPeriodicEvent();
                 saveSnvState( SNV_APP_ID, &gSnvState );
             }
 /*** End ***/
@@ -137,14 +145,14 @@ snv_config_t gSnvState = { .offOn = 0,
     switch (charId)
     {
         case LSS_OFFON_ID:
-            if (len == LSS_OFFON_LEN_MIN)
+            if (len == LSS_OFFON_LEN)
             {
                 gSnvState.offOn = *((offon_char_t *)pData);
             }
             break;
 
         case LSS_RGB_ID:
-            if (len == LSS_RGB_LEN_MIN)
+            if (len == LSS_RGB_LEN)
             {
                 gSnvState.colour = *((rgb_char_t *)pData);
             }

@@ -169,7 +169,7 @@ static ICall_EntityID selfEntity;
 
 // Event globally used to post local events and pend on system and
 // local events.
-ICall_SyncHandle syncEvent;
+static ICall_SyncHandle syncEvent;
 
 // Queue object used for application messages.
 static Queue_Struct applicationMsgQ;
@@ -181,8 +181,8 @@ Char przTaskStack[PRZ_TASK_STACK_SIZE];
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
 // PRZ task periodic clock
-static Clock_Struct periodicClock;
-static Clock_Params periodicClockParams;
+// Add clock structure declarations here
+
 #endif /* LAB_4 */
 
 // GAP - SCAN RSP data (max size = 31 bytes)

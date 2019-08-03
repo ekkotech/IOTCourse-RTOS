@@ -139,7 +139,8 @@ static rgb_char_t ledsOff = { .green = 0, .red = 0, .blue = 0 }; // Utility for 
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
 // Used to trigger setting of LEDs on start-up
-static uint8_t isFirstRun = true;
+// Insert flag here
+
 #endif /* LAB_4  */
 
 //

@@ -58,7 +58,6 @@
 /*********************************************************************
  * GLOBAL VARIABLES
  */
-extern ICall_SyncHandle syncEvent;
 extern snv_config_t gSnvState;
 extern uint8_t gIsSnvDirty;
 
