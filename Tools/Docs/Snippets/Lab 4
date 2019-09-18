@@ -98,11 +98,11 @@ static Clock_Struct periodicClock;
 /*** End ***/
 
 /*** Insert into lss_ProcessPeriodicEvent ***/
-    if (isFirstRun && (gSnvState.offOn == ON))
+    if (isFirstEvent && (gSnvState.offOn == ON))
     {
         bulkUpdateLeds( &gSnvState.colour );
         writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
-        isFirstRun = FALSE;
+        isFirstEvent = false;
     }
     else {
         saveSnvState( SNV_APP_ID, &gSnvState );
