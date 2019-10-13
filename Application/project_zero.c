@@ -160,6 +160,17 @@ snv_config_t gSnvState = { .offOn = 0,
 
 #endif /* LAB_4 */
 
+//
+// Original Project Zero code has these declared as local variables
+// Need to promote up to global in order to access across the app
+//
+// Entity ID globally used to check for source and/or destination of messages
+ICall_EntityID selfEntity;
+
+// Event globally used to post local events and pend on system and
+// local events.
+ICall_SyncHandle syncEvent;
+
 /*********************************************************************
  * LOCAL VARIABLES
  */
