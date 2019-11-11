@@ -1,1 +1,26 @@
-.DS_Store
+# Project: IOTCourse
+#
+
+# Ignore everything
+*
+
+# Ignore all of this type
+**.DS_Store
+
+# Descend into directories
+!*/
+
+# Whitelist top-level files
+!.gitignore
+!README.md
+
+# Whitelist specific directories
+!/Application/**
+!/PROFILES/**
+!/TOOLS/**
+!/TOOLS/Docs/**
+/TOOLS/src/*
+/TOOLS/app_ble.cfg
+/TOOLS/.DS_Store
+/TOOLS/Docs/.DS_Store
+/FlashROM_StackLibrary/
