@@ -175,13 +175,6 @@ ICall_SyncHandle syncEvent;
  * LOCAL VARIABLES
  */
 
-// Entity ID globally used to check for source and/or destination of messages
-static ICall_EntityID selfEntity;
-
-// Event globally used to post local events and pend on system and
-// local events.
-static ICall_SyncHandle syncEvent;
-
 // Queue object used for application messages.
 static Queue_Struct applicationMsgQ;
 static Queue_Handle hApplicationMsgQ;
@@ -196,11 +189,17 @@ Char przTaskStack[PRZ_TASK_STACK_SIZE];
 
 #endif /* LAB_4 */
 
+// LAB_1_TODO
+// Modify advertData and scanRspData here
+
+
+
 // GAP - SCAN RSP data (max size = 31 bytes)
 static uint8_t scanRspData[] =
 {
   // No scan response data provided.
   0x00 // Placeholder to keep the compiler happy.
+
 };
 
 // GAP - Advertisement data (max size = 31 bytes, though this is
@@ -211,7 +210,7 @@ static uint8_t advertData[] =
   // mode (advertises for 30 seconds at a time) or general
   // discoverable mode (advertises indefinitely), depending
   // on the DEFAULT_DISCOVERY_MODE define.
-  0x02,   // length of this data
+  2,   // length of this data
   GAP_ADTYPE_FLAGS,
   DEFAULT_DISCOVERABLE_MODE | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
 
@@ -219,6 +218,7 @@ static uint8_t advertData[] =
  16,
  GAP_ADTYPE_LOCAL_NAME_COMPLETE,
  'P', 'r', 'o', 'j', 'e', 'c', 't', ' ', 'Z', 'e', 'r', 'o', ' ','R','2',
+
 };
 
 // GAP GATT Attributes
@@ -350,7 +350,7 @@ static gapRolesCBs_t user_gapRoleCBs =
 // GAP Bond Manager Callbacks
 static gapBondCBs_t user_bondMgrCBs =
 {
-  user_gapBondMgr_passcodeCB, // Passcode callback
+  (pfnPasscodeCB_t)user_gapBondMgr_passcodeCB, // Passcode callback
   user_gapBondMgr_pairStateCB // Pairing / Bonding state Callback
 };
 
@@ -594,16 +594,20 @@ static void ProjectZero_init( void )
               (IArg )Util_getLocalNameStr(advertData));
 
 #ifdef LAB_1        // Lab 1 - Apple Inter-operability
-  // Override default GAP Role parameters set in peripheral.c
-  // GAPROLE_LINK_PARAM_UPDATE_WAIT_REMOTE_PARAMS: will wait for a parameter update
-  // request from the remote before sending
-  // GAPROLE_LINK_PARAM_UPDATE_INITIATE_APP_PARAMS: will send desired parameters as
-  // soon as a link has been established with the remote
-  uint8_t enableUpdateRequest = aaa;
-  uint16_t desiredConnTimeout = bbb;    // Units of 10ms - 2000ms / 10ms = 200
-  uint16_t desiredSlaveLatency = c;     // No units = 0
-  uint16_t desiredMinInterval = dd;     // Units of 1.25ms - 75ms / 1.25ms = 60
-  uint16_t desiredMaxInterval = eee;    // Units of 1.25ms - 125ms / 1.25ms = 100
+    
+    // LAB_1_TODO
+    // Modify code here
+
+    // Override default GAP Role parameters set in peripheral.c
+    // GAPROLE_LINK_PARAM_UPDATE_WAIT_REMOTE_PARAMS: will wait for a parameter update
+    // request from the remote before sending
+    // GAPROLE_LINK_PARAM_UPDATE_INITIATE_APP_PARAMS: will send desired parameters as
+    // soon as a link has been established with the remote
+    uint8_t enableUpdateRequest = aaa;
+    uint16_t desiredConnTimeout = bbb;    // Units of 10ms - 2000ms / 10ms = 200
+    uint16_t desiredSlaveLatency = c;     // No units = 0
+    uint16_t desiredMinInterval = dd;    // Units of 1.25ms - 75ms / 1.25ms = 60
+    uint16_t desiredMaxInterval = eee; // Units of 1.25ms - 125ms / 1.25ms = 100
 
     // // Set the Peripheral GAPRole Parameters
     GAPRole_SetParameter(GAPROLE_PARAM_UPDATE_ENABLE, sizeof(uint8_t),
@@ -617,8 +621,9 @@ static void ProjectZero_init( void )
     GAPRole_SetParameter(GAPROLE_MAX_CONN_INTERVAL, sizeof(uint16_t),
                          &desiredMaxInterval);
 
-  // Set advertising interval
-  uint16_t advInt = fff;     // Units of 625us - 152.5ms / 0.625ms = 244
+    // Set advertising interval
+    uint16_t advInt = fff;     // Units of 625us - 152.5ms / 0.625ms = 244
+
 
 #else
     uint16_t advInt = DEFAULT_ADVERTISING_INTERVAL;
@@ -661,10 +666,10 @@ static void ProjectZero_init( void )
     GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName);
 
 #ifdef LAB_1        // Lab 1 - Apple Inter-operability
-  // Set the GAP Device Name permissions
-  Comment this line out; uncomment next two lines
-  //uint8 devNamePermission = GATT_PERMIT_READ | GATT_PERMIT_WRITE;
-  //GGS_SetParameter( GGS_W_PERMIT_DEVICE_NAME_ATT, sizeof ( uint8 ), &devNamePermission );
+    
+    // LAB_1_TODO - Insert device name write permission here
+    
+
 #endif /* LAB_1 */
 
     // Add services to GATT server and give ID of this task for Indication acks.

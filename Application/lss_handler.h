@@ -47,6 +47,7 @@ extern "C"
 /*********************************************************************
  * INCLUDES
  */
+#include "labs.h"
 
 /*********************************************************************
  * CONSTANTS
@@ -96,12 +97,15 @@ extern "C"
 #define BLUE_MASK_S                 8
 #define WHITE_MASK_S                0
 
+#ifdef LAB_3        // LAB_3 - LED String Driver Implementation
 //
 // Bit stream buffer location
 #define USE_GPRAM                   // Comment out to use SRAM
 #ifdef USE_GPRAM
 #define BIT_STREAM_GPRAM_BASE       (uint16_t *)0x11001000      // Top 4k of GPRAM - must be 32-bit aligned
 #endif
+
+#endif /* LAB_3 */
 
 // SSI channel configuration
 //
