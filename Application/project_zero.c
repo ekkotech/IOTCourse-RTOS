@@ -189,7 +189,7 @@ Char przTaskStack[PRZ_TASK_STACK_SIZE];
 
 #endif /* LAB_4 */
 
-// LAB_1_TODO
+// LAB_1_TODO_3
 // Modify advertData and scanRspData here
 
 
@@ -595,7 +595,7 @@ static void ProjectZero_init( void )
 
 #ifdef LAB_1        // Lab 1 - Apple Inter-operability
     
-    // LAB_1_TODO
+    // LAB_1_TODO_1
     // Modify code here
 
     // Override default GAP Role parameters set in peripheral.c
@@ -667,7 +667,7 @@ static void ProjectZero_init( void )
 
 #ifdef LAB_1        // Lab 1 - Apple Inter-operability
     
-    // LAB_1_TODO - Insert device name write permission here
+    // LAB_1_TODO_2 - Insert device name write permission here
     
 
 #endif /* LAB_1 */
