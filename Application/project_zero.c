@@ -191,6 +191,8 @@ Char przTaskStack[PRZ_TASK_STACK_SIZE];
 
 // LAB_1_TODO_3
 // Modify advertData and scanRspData here
+// Tag for TX power is GAP_ADTYPE_POWER_LEVEL
+// Tag for Primary Service is GAP_ADTYPE_128BIT_MORE
 
 
 
