@@ -679,7 +679,9 @@ static void ProjectZero_init( void )
     ButtonService_AddService(selfEntity);
     DataService_AddService(selfEntity);
 #ifdef LAB_2        // LAB_2 - Service configuration
-  // Add services here
+ 
+    // LAB_2_TODO_1 - Add services here
+
 #endif /* LAB_2 */
 
     // Register callbacks with the generated services that
@@ -688,7 +690,9 @@ static void ProjectZero_init( void )
     ButtonService_RegisterAppCBs(&user_Button_ServiceCBs);
     DataService_RegisterAppCBs(&user_Data_ServiceCBs);
 #ifdef LAB_2        // LAB_2 - Service configuration
-  // Register App callbacks here
+
+    // LAB_2_TODO_2 - Register App callbacks here
+
 #endif /* LAB_2 */
 
     // Placeholder variable for characteristic initialization
