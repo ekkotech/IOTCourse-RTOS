@@ -636,9 +636,10 @@ static void initDMA()
     // Add initialisation code here
     // Disable all channels before making changes
     
+    // Set the base address of the uDMA control table. This is fixed at 0x2000_0400 - mask lower bits as a precaution
+
     // Enable the uDMA peripheral
     
-    // Set the base address of the uDMA control table. This is fixed at 0x2000_0400 - mask lower bits as a precaution
     
 
     // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
