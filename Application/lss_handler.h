@@ -77,6 +77,7 @@ extern "C"
 #define RGBW_COLOURS                4
 #define NUM_COLOURS                 RGB_COLOURS
 #define NIBBLES_PER_BYTE            2
+#define HWORDS_PER_WORD             2
 
 #define RED_INDEX                   0
 #define GREEN_INDEX                 1
