@@ -105,13 +105,13 @@ static dma_config_t ssi1ControlBlock;
 //          ledBitStream[least significant nibble of blue]
 //              repeat as needed...
 // Require bitStream aligned on 4 byte boundary (32-bit aligned) for fast bulk updating
-//static uint16_t *pBitStream[NUM_LED_STRINGS] = { &bitStream[0], &bitStream[NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE] };
+//static uint16_t *pBitStream[NUM_LED_STRINGS] = { &bitStream[0], &bitStream[NUM_LEDS_PER_STRING * NUM_COLOURS * HWORDS_PER_WORD] };
 
 #ifdef USE_GPRAM
 static uint16_t *pBitStream = BIT_STREAM_GPRAM_BASE;
 #else
 #pragma DATA_ALIGN ( bitStream, 4 )
-static uint16_t bitStream[NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE];
+static uint16_t bitStream[NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * HWORDS_PER_WORD];
 static uint16_t *pBitStream = (uint16_t *)&bitStream;
 #endif
 
@@ -1092,9 +1092,9 @@ static void disableCache()
     HWREG(UDMA0_BASE + UDMA_O_CTRL) = (DMA_CONFIG_BASE_ADDR & UDMA_CTRL_BASEPTR_M);
 
     // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
-    ssi0ControlBlock.pvSrcEndAddr = (uint32_t *) (pBitStream + (NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1);
+    ssi0ControlBlock.pvSrcEndAddr = (uint32_t *) (pBitStream + (NUM_LEDS_PER_STRING * NUM_COLOURS * HWORDS_PER_WORD) - 1);
     ssi0ControlBlock.pvDstEndAddr = (uint32_t *) (SSI0_BASE + SSI_O_DR);
-    ssi1ControlBlock.pvSrcEndAddr = (uint32_t *) (pBitStream + (NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1);
+    ssi1ControlBlock.pvSrcEndAddr = (uint32_t *) (pBitStream + (NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * HWORDS_PER_WORD) - 1);
     ssi1ControlBlock.pvDstEndAddr = (uint32_t *) (SSI1_BASE + SSI_O_DR);
 
     // The control word for both channels is identical
@@ -1120,7 +1120,7 @@ static void disableCache()
     if (!(HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) & DMA_CHANNEL_SSI_BOTH_M))
     {
         uint32_t control;
-        uint32_t transferCount = (((NUM_LEDS_PER_STRING * NUM_COLOURS * NIBBLES_PER_BYTE) - 1) << UDMA_XFER_SIZE_S);
+        uint32_t transferCount = (((NUM_LEDS_PER_STRING * NUM_COLOURS * HWORDS_PER_WORD) - 1) << UDMA_XFER_SIZE_S);
         control = ssi0ControlBlock.ui32Control & ~(UDMA_XFER_SIZE_M | UDMA_MODE_M);
         control |= (transferCount | UDMA_MODE_BASIC);
         ssi0ControlBlock.ui32Control = control;
