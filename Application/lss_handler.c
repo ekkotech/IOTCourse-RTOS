@@ -794,6 +794,20 @@ static void writeLeds( Semaphore_Handle handle, uint16_t timeout )
     // LAB_3_TODO_4
     
     // Add handler code here
+    // Ensure that both channels are disabled before making any changes
+    
+        // Configure control words
+
+        // Enable uDMA channels
+        
+        // Enable SSI DMA operation
+        
+
+        // Pend on semaphore
+        
+                // Ensure that both SSI channels have completed any prior send
+                // Add an additional delay to ensure the the 80us reset time for the SK6812 LEDs is met
+
 
 }
 #endif /* LAB_3 */
