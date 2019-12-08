@@ -706,7 +706,7 @@ static void initResources()
     // Create DMA complete semaphore
 
     // Create Hwi
-    // Only need a Hwi for SSI channel 1
+    // Only need a Hwi for SSI1
  
 
 #ifdef LAB_6        // LAB_6 - Random Fader Implementation
