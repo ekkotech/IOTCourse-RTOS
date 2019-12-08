@@ -633,6 +633,8 @@ static void initDMA()
     PRCMPeripheralDeepSleepEnable( PRCM_PERIPH_UDMA );
     PRCMLoadSet();      // Load the shadow registers
 
+    // LAB_3_TODO_2
+
     // Add initialisation code here
     // Disable all channels before making changes
     
@@ -702,6 +704,8 @@ static void initTRNG()
 #ifdef LAB_3        // LAB_3 - LED String Driver Implementation
 static void initResources()
 {
+    // LAB_3_TODO_3
+    
     // Add initialisation code here
     // Create DMA complete semaphore
 
