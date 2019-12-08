@@ -791,6 +791,8 @@ static void bulkUpdateLeds( rgb_char_t *pColour )
 static void writeLeds( Semaphore_Handle handle, uint16_t timeout )
 {
 
+    // LAB_3_TODO_4
+    
     // Add handler code here
 
 }
