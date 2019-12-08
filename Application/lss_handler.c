@@ -84,6 +84,9 @@
 static Semaphore_Params dmaCompleteSemaParams;
 static Semaphore_Struct dmaCompleteSema;
 static Semaphore_Handle hDmaCompleteSema;
+//
+// Hardware interrupt
+static Hwi_Struct dmaCompleteHwi;
 
 //
 // Channel Control Descriptors (CCDs) for DMA channel 4 (SSI0) and DMA channel 17 (SSI1)
@@ -705,7 +708,7 @@ static void initTRNG()
 static void initResources()
 {
     // LAB_3_TODO_3
-    
+
     // Add initialisation code here
     // Create DMA complete semaphore
 
