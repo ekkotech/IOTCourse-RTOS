@@ -826,7 +826,8 @@ static void writeLeds( Semaphore_Handle handle, uint16_t timeout )
  */
 static void waitOnSsiSendComplete()
 {
-
+    // LAB_3_TODO_6
+    
     // Insert handler code here
 
 }
