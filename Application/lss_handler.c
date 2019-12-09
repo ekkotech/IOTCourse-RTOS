@@ -539,11 +539,12 @@ static void processRGBValueChange( char_data_t *pCharData )
 #ifdef LAB_3        // LAB_3 - LED String Driver Implementation
 static void dmaCompleteHwiFxn( UArg arg )
 {
+    // LAB_3_TODO_5
+    
     // Add HwiFxn handler code here
-    // Disable SSI DMA
-    
-    
     // Clear uDMA REQDONE bits
+    
+    // Disable SSI DMA    
     
     // Notify task DMA done
     
