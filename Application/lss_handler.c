@@ -153,12 +153,6 @@ static uint8_t isFirstEvent = true;
 static bool isBelowLMThreshold = false;
 #endif /* LAB_5 */
 
-#ifdef LAB_6        // LAB_6 - Random Fader Implementation
-// Random Fader clock
-// Random Fader control variables
-static fade_control_t fadeControl = { .period = FADE_DEFAULT_FADE_PERIOD, .iterationCount = 0 };
-#endif /* LAB_6 */
-
 /*********************************************************************
  * PUBLIC FUNCTIONS
  */
@@ -203,14 +197,6 @@ static void startProgram(uint8_t program);
 static void stopProgram(uint8_t program);
 static void checkLuminanceThreshold();
 #endif /* LAB_5 */
-
-#ifdef LAB_6        // LAB_6 - Random Fader Implementation
-static void processFadeTimeout();
-static void fadeTimeoutSwiFxn(UArg period);
-// TRNG related
-static void initTRNG();
-static uint32_t getTrngRandNumber();
-#endif /* LAB_6 */
 
 /*********************************************************************
  * EXTERN FUNCTIONS
@@ -277,10 +263,6 @@ void lss_Hardware_Init()
     initSSI();
     initDMA();
 
-#ifdef LAB_6        // LAB_6 - Random Fader Implementation
-    initTRNG();
-#endif /* LAB_6 */
-
 }
 
 /*
@@ -317,48 +299,8 @@ void lss_ProcessPeriodicEvent()
 
     // Insert handler code here
 
-
-//#ifdef LAB_3        // LAB_3 - LED String Driver Implementation
-//    if (isFirstRun == TRUE)
-//    {
-//        // Initialise LEDs to some state
-//#ifndef LAB_4       // LAB_4 - Non-Volatile Memory
-//        led_t *pColour = &ledsOff;
-//#else
-//        led_t *pColour = snvState.offOn ? &snvState.colour : &ledsOff;
-//#endif /* LAB_4 */
-//        bulkUpdateLeds( pColour );
-//        writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
-//        isFirstRun = FALSE;
-//    }
-//#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-//    saveSnvState(SNV_APP_ID, sizeof(snvState), (uint8_t *)&snvState);
-//#endif /* LAB_4 */
-//
-//#ifdef LAB_5
-//    checkLuminanceThreshold();
-//#endif /* LAB_5 */
-//#endif /* LAB_3 */
 }
 #endif /* LAB_4 */
-
-/*
- * @fn      lss_ProcessFadeTimeoutEvent
- *
- * @brief   Process random fader timeout event
- *
- * @param   none
- *
- * @return  none
- *
- */
-#ifdef LAB_6        // LAB_6 - Random Fader Implementation
-void lss_ProcessFadeTimeoutEvent()
-{
-    processFadeTimeout();
-
-}
-#endif /* LAB__6 */
 
 /******************************************************************************
  *****************************************************************************
@@ -389,7 +331,9 @@ static void processOffOnValueChange( char_data_t *pCharData )
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
     if (pCharData->dataLen == sizeof(offon_char_t))
     {
-    // Insert handler code here
+        // LAB_4_TODO_3b
+
+        // Insert handler code here
 
     }
     else {
@@ -397,55 +341,6 @@ static void processOffOnValueChange( char_data_t *pCharData )
     }
 #endif /* LAB_4 */
 
-#ifdef LAB_3x        // LAB_3 - LED String Driver Implementation
-#ifndef LAB_4        // LAB_4 - Non-Volatile Memory
-
-    if ((pCharData->dataLen == sizeof(offon_char_t)))
-    {
-        led_t thisColour = ledsOff;
-        uint16_t rgbLen = sizeof(rgb_char_t);
-        rgb_char_t thisRgb;
-
-        if (*((offon_char_t *) pCharData->data))
-        {
-            LssService_GetParameter( LSS_RGB_ID, &rgbLen, &thisRgb );
-            thisColour.green = thisRgb.green;
-            thisColour.red = thisRgb.red;
-            thisColour.blue = thisRgb.blue;
-        }
-        bulkUpdateLeds( &thisColour );
-        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
-
-    }
-#else
-    if ((pCharData->dataLen == sizeof(offon_char_t)) && (snvState.offOn != *((offon_char_t *)pCharData->data)))
-    {
-        updateSnvState(pCharData->paramID, pCharData->dataLen, pCharData->data);
-
-        switch (snvState.program)
-        {
-            case RGB_SLIDER:
-            bulkUpdateLeds( snvState.offOn == ON ? &snvState.colour : &ledsOff );
-            writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
-            break;
-#ifdef LAB_6        // LAB_6 - Random Fader Implementation
-            case RAND_FADE:
-            if (((snvState.offOn == ON) && !snvState.lmOffOn) || (snvState.lmOffOn && isBelowLMThreshold))
-            {
-                startProgram(snvState.program);
-            }
-            else
-            {
-                stopProgram(snvState.program);
-                bulkUpdateLeds( &ledsOff );
-                writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
-            }
-#endif  /* LAB_6 */
-        }
-    }
-
-#endif /* LAB_4 */
-#endif /* LAB_3 */
 }
 
 /*
@@ -463,48 +358,16 @@ static void processRGBValueChange( char_data_t *pCharData )
 
     if (pCharData->dataLen == sizeof(rgb_char_t))
     {
-     // Insert handler code here
+        // LAB_3_TODO_7
+        // LAB_4_TODO_3b
+        
+        // Insert handler code here
  
     }
     else {
         Log_info0("Incorrect data size for RGB value change");
     }
 
-
-
-
-#ifdef LAB_3x        // LAB_3 - LED String Driver Implementation
-
-#ifndef LAB_4     // LAB_4 - Non-Volatile Memory
-    if (pCharData->dataLen == sizeof(rgb_char_t))
-    {
-        rgb_char_t *pRgb = (rgb_char_t *) pCharData->data;
-        bulkUpdateLeds( pRgb );
-        writeLeds( hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS );
-    }
-    else {
-        Log_info0("Incorrect data size for RGB value change");
-    }
-#else
-    if (pCharData->dataLen == sizeof(rgb_char_t))
-    {
-//        led_t grb = { .green = ((rgb_char_t *)pCharData->data)->green,
-//                      .red = ((rgb_char_t *)pCharData->data)->red,
-//                      .blue = ((rgb_char_t *)pCharData->data)->blue};
-
-        updateSnvState(LSS_RGB_ID, pCharData->dataLen, &pCharData->data);
-
-        if (snvState.offOn == ON)
-        {
-            bulkUpdateLeds( &snvState.colour );
-            writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
-        }
-    }
-    else {
-        Log_info0("Incorrect data size for RGB value change");
-    }
-#endif /* LAB_4 */
-#endif /* LAB_3 */
 }
 
 #endif /* LAB_2 */
@@ -665,34 +528,6 @@ static void initDMA()
 }
 #endif /* LAB_3 */
 
-#ifdef LAB_6        // LAB_6 - Random Fader Implementation
-/*
- * @fn      initTRNG
- *
- * @brief   Initialises the true random number generator
- *
- * @param   none
- *
- * @return  none
- */
-static void initTRNG()
-{
-
-    Power_setDependency(PowerCC26XX_PERIPH_TRNG); // Enable power & clock to TRNG
-
-    // Reset the module
-    HWREG(TRNG_BASE + TRNG_O_SWRESET) = 1;
-    // Wait for reset to complete
-    while (HWREG(TRNG_BASE + TRNG_O_SWRESET) > 0)
-    {}
-
-    TRNGConfigure(0, 256, 0); // Min samples = max samples, max samples = 2^8, sample every clock
-    // Enable the TRNG
-    HWREGBITW(TRNG_BASE + TRNG_O_CTL, TRNG_CTL_TRNG_EN_BITN) = 1;
-
-}
-#endif  /* LAB_6 */
-
 /*
  *  Resource initialisation
  *****************************************************************************/
@@ -716,18 +551,6 @@ static void initResources()
     // Create Hwi
     // Only need a Hwi for SSI1
  
-
-#ifdef LAB_6        // LAB_6 - Random Fader Implementation
-    // Create the clock for the fader
-    Clock_Params_init(&fadeControl.clock.clockParams);
-    fadeControl.clock.clockParams.arg = PRZ_FADE_TIMEOUT_EVT;
-    // Initialise to default timeout
-    // Timeout is in clock ticks (256 iterations per period; clock tick is 10us)
-    Clock_construct(&fadeControl.clock.clockDef, fadeTimeoutSwiFxn,
-            ((FADE_DEFAULT_FADE_PERIOD * USEC_PER_SEC) / FADE_NUM_ITERATIONS) / Clock_tickPeriod,
-            &fadeControl.clock.clockParams);
-#endif /* LAB_6 */
-
 }
 #endif /* LAB_3 */
 
@@ -847,7 +670,7 @@ static void waitOnSsiSendComplete()
  */
 static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
 {
-    // LAB_4_TODO_3
+    // LAB_4_TODO_3a
 
     // Insert handler code here
 
@@ -943,29 +766,6 @@ static void startProgram(uint8_t program)
             writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
             break;
         }
-#ifdef LAB_6        // LAB_6 - Random Fader Implementation
-        case RAND_FADE:
-        {
-            // If snvState.offOn == ON, get initial seed from TRNG, start timer
-            // If snvState == OFF, switch off LEDs
-            if (snvState.offOn == ON)
-            {
-                fadeControl.iterationCount = 0;
-                uint32_t seed = getTrngRandNumber();
-                // Set up initial colours
-                led_t filler =
-                {   .red = (seed & TRNG_RED_MASK), .green = (seed & TRNG_GREEN_MASK) >> 8, .blue = (seed & TRNG_BLUE_MASK) >> 16};
-                bulkUpdateLeds( &filler );
-                Clock_start(Clock_handle(&fadeControl.clock.clockDef));
-            }
-            else
-            {
-                bulkUpdateLeds( &ledsOff );
-                writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
-            }
-            break;
-        }
-#endif /* LAB_6 */
         default:
         Log_info0("WARNING: lssStartProgram: Invalid program id");
         break;
@@ -991,12 +791,6 @@ static void stopProgram(uint8_t program)
         case RGB_SLIDER:
         // Nothing needed here
         break;
-#ifdef LAB_6        // LAB_6 - Random Fader Implementation
-        case RAND_FADE:
-        // Just stopping the clock will leave the LEDs in a lit state
-        Clock_stop(Clock_handle(&fadeControl.clock.clockDef));
-        break;
-#endif /* LAB_6 */
         default:
         Log_info0("WARNING: lssStopProgram: Invalid program id");
         break;
@@ -1004,40 +798,6 @@ static void stopProgram(uint8_t program)
 }
 #endif /* LAB_5 */
 
-/*
- * @fn      getTrngRandNumber
- *
- * @brief   Reads the TRNG
- *
- * @discussion  The TRNG takes 2^8 clock cycles (~5us) to generate the first random number
- *          and 2^8 clock cycles to regenerate each additional random number
- *          In the event that TRNG is not ready to supply the first random number, an incrementing number is returned
- *
- * @return  32-bit random number
- */
-#ifdef LAB_6        // LAB_6 - Random Fader Implementation
-static uint32_t getTrngRandNumber()
-{
-
-    static uint32_t filler;
-    uint32_t lowRand;
-
-    if ((HWREG(TRNG_BASE + TRNG_O_IRQFLAGSTAT) & TRNG_NUMBER_READY) != 0)
-    {
-        // Get the low 32-bits of the random number
-        lowRand = HWREG(TRNG_BASE + TRNG_O_OUT0);
-        // Kick off generation of a new number
-        HWREG(TRNG_BASE + TRNG_O_IRQFLAGCLR) = 0x1;
-    }
-    else
-    {
-        lowRand = ++filler;
-    }
-
-    return lowRand;
-
-}
-#endif /* LAB_6 */
 
 #ifdef USE_GPRAM
 /*********************************************************************
@@ -1078,119 +838,3 @@ static void disableCache()
 //    VIMSModeSafeSet(VIMS_BASE, VIMS_MODE_ENABLED, true);
 //    Hwi_restore(hwiKey);
 //}
-/*********************************************************************
- *
- *     for (uint8_t idx = 0; idx < SSI_NUM_CHANNELS; ++idx)
-    {
-        // SSI channels are disabled by default after reset
-        // Set clock pre-scaler to 2 (divides the system clock by 2 to 24MHz)
-        HWREG(ssi[idx].chAdr + SSI_O_CPSR) = SSI_CLOCK_PRESCALE_DIV_2;
-        // Configure clock divisor, frame format, data width
-        HWREG(ssi[idx].chAdr + SSI_O_CR0) = ((SSI_CLOCK_DIV_6 << SSI_CR0_SCR_S) | SSI_CR0_FRF_TI_SYNC_SERIAL | SSI_CR0_DSS_16_BIT);
-
-        // Set up I/O
-        // Set up the output pin for each channel
-        uint32_t temp;
-        temp = HWREG( IOC_BASE + (ssi[idx].ioid * sizeof(uint32_t)) ) & ~IOC_IOCFG0_PULL_CTL_M;
-        temp |= (IOC_IOCFG0_PULL_CTL_DWN | IOC_IOCFG0_IOCURR_4MA | ssi[idx].portId);
-        HWREG(IOC_BASE + (ssi[idx].ioid * sizeof(uint32_t))) = temp;
-        // Enable output
-        HWREG(GPIO_BASE + GPIO_O_DOE31_0) |= (1 << ssi[idx].ioid);
-
-        // Enable SSI channel
-        HWREG(ssi[idx].chAdr + SSI_O_CR1) |= SSI_CR1_SSE;
-    }
- *
- *     // Disable all channels before making changes
-    HWREG(UDMA0_BASE + UDMA_O_CLEARCHANNELEN) = UDMA_CLEARCHANNELEN_CHNLS_M;
-    // Enable the uDMA peripheral
-    HWREG(UDMA0_BASE + UDMA_O_CFG) = UDMA_CFG_MASTERENABLE;
-    // Set the base address of the uDMA control table. This is fixed at 0x2000_0400 - mask lower bits as a precaution
-    HWREG(UDMA0_BASE + UDMA_O_CTRL) = (DMA_CONFIG_BASE_ADDR & UDMA_CTRL_BASEPTR_M);
-
-    // The source, destination addresses and transfer modes for both channels do not change so we can set them up here
-    ssi0ControlBlock.pvSrcEndAddr = (uint32_t *) (pBitStream + (NUM_LEDS_PER_STRING * NUM_COLOURS * HWORDS_PER_WORD) - 1);
-    ssi0ControlBlock.pvDstEndAddr = (uint32_t *) (SSI0_BASE + SSI_O_DR);
-    ssi1ControlBlock.pvSrcEndAddr = (uint32_t *) (pBitStream + (NUM_LED_STRINGS * NUM_LEDS_PER_STRING * NUM_COLOURS * HWORDS_PER_WORD) - 1);
-    ssi1ControlBlock.pvDstEndAddr = (uint32_t *) (SSI1_BASE + SSI_O_DR);
-
-    // The control word for both channels is identical
-    uint32_t control = 0;
-    control = (UDMA_DST_INC_NONE | UDMA_SRC_INC_16 | UDMA_SIZE_16 | UDMA_ARB_4 | UDMA_MODE_BASIC);
-    // This bit-wise AND with zero is to force a read of each control block to keep the compiler happy
-    // Without this, the complier thinks that the control blocks are being set but not read hence wasting RAM space
-    ssi0ControlBlock.ui32Control = (ssi0ControlBlock.ui32Control & 0) | control;
-    ssi1ControlBlock.ui32Control = (ssi1ControlBlock.ui32Control & 0) | control;
-
-    // Create Hwi
-    // Only need a Hwi for SSI channel 1
-    Hwi_create( INT_SSI1_COMB, dmaCompleteHwiFxn, NULL, NULL );
- *
- *
- *     // DMA complete semaphore
-    dmaCompleteSemaParams.mode = Semaphore_Mode_BINARY;
-    Semaphore_construct( &dmaCompleteSema, 0, &dmaCompleteSemaParams );
-    hDmaCompleteSema = Semaphore_handle( &dmaCompleteSema );
- *
- *
- *     // Ensure that both channels are disabled before making any changes
-    if (!(HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) & DMA_CHANNEL_SSI_BOTH_M))
-    {
-        uint32_t control;
-        uint32_t transferCount = (((NUM_LEDS_PER_STRING * NUM_COLOURS * HWORDS_PER_WORD) - 1) << UDMA_XFER_SIZE_S);
-        control = ssi0ControlBlock.ui32Control & ~(UDMA_XFER_SIZE_M | UDMA_MODE_M);
-        control |= (transferCount | UDMA_MODE_BASIC);
-        ssi0ControlBlock.ui32Control = control;
-        ssi1ControlBlock.ui32Control = control;
-
-        // Enable uDMA channels
-        HWREG(UDMA0_BASE + UDMA_O_SETCHANNELEN) = DMA_CHANNEL_SSI_BOTH_M;
-        // Enable SSI DMA operation
-        HWREGBITW(SSI0_BASE + SSI_O_DMACR, SSI_DMACR_TXDMAE_BITN) = 1;
-        HWREGBITW(SSI1_BASE + SSI_O_DMACR, SSI_DMACR_TXDMAE_BITN) = 1;
-
-        if (handle != NULL)
-        {
-            if (Semaphore_pend( handle, timeout * (MSEC_PER_SEC / Clock_tickPeriod) ))
-            {
-                // Ensure that both SSI channels have completed any prior send
-                // Add an additional delay to ensure the the 80us reset time for the SK6812 LEDs is met
-                waitOnSsiSendComplete();
-                Task_sleep( SSI_DELAY_100us / Clock_tickPeriod );
-            }
-            else
-            {
-                Log_info0( "Semaphore pend timeout" );
-            }
-        }
-    }
- *
- *
- *     uint8_t loopCount = 0;
-
-    while (!(HWREG(SSI0_BASE + SSI_O_SR) & SSI_SR_TFE_M)
-            & (HWREG(SSI1_BASE + SSI_O_SR) & SSI_SR_TFE_M))
-    {
-        Task_sleep( SSI_WAIT_ON_TX_EMPTY_DELAY / Clock_tickPeriod );
-        ++loopCount;
-
-        if ((loopCount * SSI_WAIT_ON_TX_EMPTY_DELAY) > SSI_MAX_DELAY)
-        {
-            break;
-        }
-    }
- *
- *
- *     // Disable SSI DMA
-    HWREGBITW(SSI0_BASE + SSI_O_DMACR, SSI_DMACR_TXDMAE_BITN) = 0;
-    HWREGBITW(SSI1_BASE + SSI_O_DMACR, SSI_DMACR_TXDMAE_BITN) = 0;
-    // Clear uDMA REQDONE bits
-    HWREG(UDMA0_BASE + UDMA_O_REQDONE) = DMA_CHANNEL_SSI_BOTH_M;
-    // Notify task DMA done
-    Semaphore_post( hDmaCompleteSema );
- *
- *
- *
- *
- *
- *********************************************************************/
