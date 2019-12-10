@@ -847,6 +847,8 @@ static void waitOnSsiSendComplete()
  */
 static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
 {
+    // LAB_4_TODO_3
+    
     // Insert handler code here
 
 }
@@ -868,20 +870,10 @@ static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
 static void saveSnvState( uint8_t appId, snv_config_t *pState )
 {
 
-    // Insert handelr code here
-    //
+    // LAB_4_TODO_2
+
+    // Insert handler code here
     // Write out snv structure to SNV if it has changed
-    //
-    if (snvIsDirty == true)
-    {
-        uint32_t status = osal_snv_write( appId, sizeof(snv_config_t), (uint8_t *)pState );
-        if (status == SUCCESS)
-        {
-            snvIsDirty = false;
-        }
-        else
-        {   Log_info0("SNV write failed");}
-    }
 
 }
 #endif /* LAB_4 */

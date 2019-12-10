@@ -94,7 +94,7 @@ void user_AlsService_ValueChangeHandler(char_data_t *pCharData);
 void user_AlsService_CfgChangeHandler(char_data_t *pCharData);
 void als_Hardware_Init();
 void als_Resource_Init();
-void als_ProcessPeriodicEvent();
+void als_ProcessPeriodicEvent(uint8_t isFirstRun);
 
 /*********************************************************************
 *********************************************************************/

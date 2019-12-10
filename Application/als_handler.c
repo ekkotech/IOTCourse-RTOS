@@ -77,9 +77,9 @@ void user_AlsService_ValueChangeHandler(char_data_t *pCharData);
 void user_AlsService_CfgChangeHandler(char_data_t *pCharData);
 #endif /* LAB_2 */
 
-#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-void als_ProcessPeriodicEvent( uint8_t isFirstRun );
-#endif /* LAB_4 */
+// #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+// void als_ProcessPeriodicEvent( uint8_t isFirstRun );
+// #endif /* LAB_4 */
 
 #ifdef LAB_5        // LAB_5 - Analogue Input
 void als_Hardware_Init();
@@ -109,7 +109,8 @@ static void updateLuminance();
  * PUBLIC FUNCTIONS
  */
 
-#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+#ifdef LAB_5        // LAB_5 - Analogue Input
+//#ifdef LAB_4        // LAB_4 - Non-Volatile Memory
 /*
  * @fn      als_ProcessPeriodicEvent
  *
@@ -120,7 +121,7 @@ static void updateLuminance();
  * @return  none
  *
  */
-void als_ProcessPeriodicEvent( uint8_t isFirstRun )
+void als_ProcessPeriodicEvent()
 {
 
     Log_info0("In als_ProcessPeriodicEvent");
@@ -128,9 +129,8 @@ void als_ProcessPeriodicEvent( uint8_t isFirstRun )
     // Insert handler code here
 
 }
-#endif /* LAB_4 */
+//#endif /* LAB_4 */
 
-#ifdef LAB_5        // LAB_5 - Analogue Input
 /*
  * @fn      als_Hardware_Init
  *

@@ -738,7 +738,7 @@ static void ProjectZero_init( void )
 #endif /* LAB_5 */
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-    // Insert initSnv here
+     initSnv(SNV_APP_ID, &gSnvState);
 
     // Insert clock construct code here
 
@@ -1769,8 +1769,9 @@ static void saveSnvState( uint8_t appId, snv_config_t *pState )
  */
 static void initSnv(uint8_t appId, snv_config_t *pSnvState)
 {
-
-    // Insert initialisation code here
+    // LAB_4_TODO_1
+    
+    // Insert SNV initialisation code here
 
 }
 #endif /* LAB_4 */
