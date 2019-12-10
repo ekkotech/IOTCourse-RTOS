@@ -142,7 +142,7 @@ static rgb_char_t ledsOff = { .green = 0, .red = 0, .blue = 0 }; // Utility for 
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
 // Used to trigger setting of LEDs on start-up
-// Insert flag here
+static uint8_t isFirstEvent = true;
 
 #endif /* LAB_4  */
 
@@ -848,7 +848,7 @@ static void waitOnSsiSendComplete()
 static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
 {
     // LAB_4_TODO_3
-    
+
     // Insert handler code here
 
 }

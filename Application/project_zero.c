@@ -96,7 +96,7 @@
 //
 // Periodic clock timeout definitions
 // Timeout for the first clock tick (in msec)
-#define STARTUP_EVT_PERIOD                  1000
+#define STARTUP_EVT_PERIOD                  500
 // How often to perform periodic event (in msec)
 #define PERIODIC_EVT_PERIOD                 5000
 
@@ -185,7 +185,8 @@ Char przTaskStack[PRZ_TASK_STACK_SIZE];
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
 // PRZ task periodic clock
-// Add clock structure declarations here
+static Clock_Params periodicClockParams;
+static Clock_Struct periodicClock;
 
 #endif /* LAB_4 */
 
@@ -740,6 +741,8 @@ static void ProjectZero_init( void )
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
      initSnv(SNV_APP_ID, &gSnvState);
 
+    // LAB_4_TODO_2a
+
     // Insert clock construct code here
 
     // Construct the periodic clock
@@ -827,6 +830,8 @@ static void ProjectZero_taskFxn( UArg a0, UArg a1 )
             }
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
+            // LAB_4_TODO_2c
+
             // Insert event handling code here
 
 #endif /* LAB_4 */
@@ -1675,6 +1680,8 @@ static void buttonDebounceSwiFxn( UArg buttonId )
 #ifdef LAB_4      // LAB_4 - Non-Volatile Memory
 static void periodicClockTimeoutSwiFxn( UArg arg ) {
 
+    // LAB_4_TODO_2b
+
     // Insert periodic clock handling code here
     
 }
@@ -1735,6 +1742,7 @@ static void buttonCallbackFxn( PIN_Handle handle, PIN_Id pinId )
  */
 static void saveSnvState( uint8_t appId, snv_config_t *pState )
 {
+    // LAB_4_TODO_2d
 
     // Insert handler code here
 

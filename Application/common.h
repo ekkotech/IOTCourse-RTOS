@@ -81,6 +81,7 @@ extern uint8_t gIsSnvDirty;
 #define ON                          1
 #define MSEC_PER_SEC                1000
 #define USEC_PER_SEC                1000000
+#define USEC_PER_MSEC               1000
 
 /*********************************************************************
  * MACROS
