@@ -297,6 +297,8 @@ void lss_ProcessPeriodicEvent()
 
     Log_info0("In lss_ProcessPeriodicEvent");
 
+    // LAB_4_TODO_3
+    
     // Insert handler code here
 
 }
@@ -673,30 +675,6 @@ static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
     // LAB_4_TODO_3
 
     // Insert handler code here
-
-}
-#endif /* LAB_4 */
-
-#ifdef LAB_4        // LAB_4 - Non-volatile memory
-/*
- * @fn      saveSnvState
- *
- * @brief   Writes snvState in memory to FLASH if snvState has been written to since
- *          the last write
- *
- * @param   appId - the ID for the SNV structure. Must be in the range 0x80 to 0x8F
- * @param   len - the number of bytes to write
- * @param   pData - pointer to the source data
- *
- * @return  none
- */
-static void saveSnvState( uint8_t appId, snv_config_t *pState )
-{
-
-    // LAB_4_TODO_2
-
-    // Insert handler code here
-    // Write out snv structure to SNV if it has changed
 
 }
 #endif /* LAB_4 */
