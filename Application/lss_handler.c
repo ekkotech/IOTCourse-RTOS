@@ -331,7 +331,7 @@ static void processOffOnValueChange( char_data_t *pCharData )
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
     if (pCharData->dataLen == sizeof(offon_char_t))
     {
-        // LAB_4_TODO_3b
+        // LAB_4_TODO_3
 
         // Insert handler code here
 
@@ -359,7 +359,7 @@ static void processRGBValueChange( char_data_t *pCharData )
     if (pCharData->dataLen == sizeof(rgb_char_t))
     {
         // LAB_3_TODO_7
-        // LAB_4_TODO_3b
+        // LAB_4_TODO_3
         
         // Insert handler code here
  
@@ -670,7 +670,7 @@ static void waitOnSsiSendComplete()
  */
 static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
 {
-    // LAB_4_TODO_3a
+    // LAB_4_TODO_3
 
     // Insert handler code here
 
