@@ -429,15 +429,12 @@ static bStatus_t LssService_ReadAttrCB( uint16_t connHandle, gattAttribute_t *pA
     {
 
     case LSS_OFFON_ID:
-#ifdef LAB_7       // Lab 7 - Pairing and Bonding
+#ifdef LAB_6       // Lab 6 - Pairing and Bonding
         // We use a read of this characteristic to force pairing
         // status = ATT_ERR_INSUFFICIENT_AUTHEN;
-        // TODO: Fix pairing after all code is working
-        if ( g_PairingState == PAIRING_NOT_STARTED )
-        {
-          return ATT_ERR_INSUFFICIENT_AUTHEN;
-        }
-#endif /* LAB_7 */
+        // LAB_6_TODO - add test for bonded here
+
+#endif /* LAB_6 */
         valueLen = lss_OFFONValLen;
         break;
 
