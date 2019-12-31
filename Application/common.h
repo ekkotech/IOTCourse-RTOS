@@ -61,6 +61,7 @@
 extern snv_config_t gSnvState;
 extern uint8_t gIsSnvDirty;
 extern uint8_t gShouldIlluminate;
+extern uint8_t gPairingState;
 
 /*********************************************************************
  * CONSTANTS
