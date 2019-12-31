@@ -326,6 +326,8 @@ static void processLMOffOnValueChange(char_data_t *pCharData)
 static void processLuminCfgChange(char_data_t *pCharData)
 {
     Log_info0("In processLuminCfgChange");
+    
+    // LAB_6_TODO - Add code to read Lumin charac and write it right back
 
 }
 #endif /* LAB_2 */
