@@ -64,6 +64,12 @@
 /*********************************************************************
  * GLOBAL VARIABLES
  */
+// Entity ID globally used to check for source and/or destination of messages
+extern ICall_EntityID selfEntity;
+
+// Event globally used to post local events and pend on system and
+// local events.
+extern ICall_SyncHandle syncEvent;
 
 /*********************************************************************
  * LOCAL VARIABLES
@@ -76,10 +82,6 @@
 void user_AlsService_ValueChangeHandler(char_data_t *pCharData);
 void user_AlsService_CfgChangeHandler(char_data_t *pCharData);
 #endif /* LAB_2 */
-
-// #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-// void als_ProcessPeriodicEvent( uint8_t isFirstRun );
-// #endif /* LAB_4 */
 
 #ifdef LAB_5        // LAB_5 - Analogue Input
 void als_Hardware_Init();
@@ -103,6 +105,7 @@ static void updateSnvState( uint8_t charId, uint16_t len, uint8_t *pData );
 #ifdef LAB_5        // LAB_5 - Analogue Input
 static void initADC(void);
 static void updateLuminance();
+static void notifyIfThreshold(uint16_t lux);
 #endif /* LAB_5 */
 
 /*********************************************************************
@@ -126,7 +129,9 @@ void als_ProcessPeriodicEvent()
 
     Log_info0("In als_ProcessPeriodicEvent");
 
-    // Insert handler code here
+ #ifdef LAB_5        // LAB_5 - Analogue Input
+    updateLuminance();
+#endif /* LAB_5 */
 
 }
 //#endif /* LAB_4 */
@@ -307,35 +312,6 @@ static void processLMOffOnValueChange(char_data_t *pCharData)
     }
 #endif /* LAB_4 */
 
-#ifdef LAB_5        // LAB_5 - Light Monitor Implementation
-    uint8_t newState;
-
-    if (pCharData->dataLen == sizeof(lmoffon_char_t));
-    {
-        newState = *((uint8_t *)pCharData->data);
-        if  ( (newState && !snvState.lmOffOn) && snvState.offOn )   // Enable light monitor
-        {
-
-            if (!isBelowLMThreshold)
-            {
-                stopProgram(snvState.program);
-                bulkUpdateLeds((LED_STRING_0_M | LED_STRING_1_M), &ledsOff);
-                writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
-            }
-        }
-        else if ( (!newState && snvState.lmOffOn) && snvState.offOn )   // Disable light monitor
-        {
-
-            if (isBelowLMThreshold)
-            {
-                startProgram(snvState.program);
-            }
-        }
-
-        updateSnvState(LSS_LMOFFON_ID, pCharData->dataLen, pCharData->data);
-    }
-#endif /* LAB_5 */
-
 }
 
 /*
@@ -409,12 +385,12 @@ static void initADC(void) {
     // Refer to API sections AUX - Auxiliary Domain (WUC and ADC)
     //
     // Enable to clock to ADI, ANAIF and ADC
-    AUXWUCClockEnable(AUX_WUC_ADI_CLOCK | AUX_WUC_ANAIF_CLOCK | AUX_WUC_ADC_CLOCK);
+
     // Disable the ADC before making any changes (clocks have to be enabled beforehand)
-    AUXADCDisable();
+
     // Set up AUXIO7 as the input - AUXIO7 has a fixed mapping to DIO23
-    AUXADCSelectInput(ADC_COMPB_IN_AUXIO7);
-    AUXADCEnableSync(AUXADC_REF_FIXED, AUXADC_SAMPLE_TIME_42P6_US, AUXADC_TRIGGER_MANUAL);
+
+
 
 }
 #endif /* LAB_5 */
@@ -465,9 +441,35 @@ static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
  */
 static void updateLuminance()
 {
+
+  // LAB_5_TODO
+  
     // Insert read ADC & update code here
 
+    //
+    // Read ADC
+    //
+
+    // Update characteristic if value has changed
+
+
 }
+
+/*********************************************************************
+ * @fn      notifyIfThreshold
+ *
+ * @brief   Notifies LED String Service if light level has crossed threshold
+ *
+ * @param   none
+ *
+ * @return  none
+ */
+static void notifyIfThreshold(uint16_t lux)
+{
+    
+    // Insert notify code here
+}
+
 #endif /* LAB_5 */
 
 /*********************************************************************

@@ -60,10 +60,14 @@
  */
 extern snv_config_t gSnvState;
 extern uint8_t gIsSnvDirty;
+extern uint8_t gShouldIlluminate;
 
 /*********************************************************************
  * CONSTANTS
  */
+
+// Global event IDs
+#define APP_LUMINANCE_CHANGE_EVT    Event_Id_29
 
 //
 // Debug logging levels

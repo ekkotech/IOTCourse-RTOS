@@ -54,23 +54,20 @@ extern "C"
 /*********************************************************************
  * INCLUDES
  */
-
+#include "lss_service.h"
+#include "als_service.h"
 /*********************************************************************
 *  EXTERNAL VARIABLES
 */
-
 /*********************************************************************
  * TYPEDEFS
  */
-typedef struct rgb {
-    uint8_t red;
-    uint8_t green;
-    uint8_t blue;
-} rgb_t;
-
 typedef struct snv_config {
-    uint8_t    offOn;
-    rgb_t      colour;
+    offon_char_t        offOn;
+    rgb_char_t          colour;
+    lmhyst_char_t       lmHyst;
+    lmthresh_char_t     lmThresh;
+    lmoffon_char_t      lmOffOn;
 } snv_config_t;
 
 /*********************************************************************

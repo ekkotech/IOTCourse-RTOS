@@ -155,12 +155,7 @@ extern "C"
 //
 #define LSS_DEFAULT_PEND_TIMEOUT_MS     50      // Milliseconds
 
-//
-// Non-volatile memory related
-//
-#define SNV_APP_ID                      0x80
-
-//#ifdef LAB_5        // Lab 5 - Random Fader Implementation
+//#ifdef LAB_n        // Lab 5 - Random Fader Implementation
 // Fader timing (applies to any fader - Random fade or other):
 // A fade 'cycle' is the changing of the LEDs from a start colour to an end colour
 // Each fade cycle comprises 256 iterations with the LED colours being updated on each iteration
@@ -178,31 +173,12 @@ extern "C"
 #define TRNG_RED_MASK               0x000000FF
 #define TRNG_GREEN_MASK             0x0000FF00
 #define TRNG_BLUE_MASK              0x00FF0000
-//#endif /* LAB_5 */
+//#endif /* LAB_n */
 
 
 /*********************************************************************
  * TYPEDEFS
  */
-
-//
-// Memory layout of characteristic data
-//
-// LED String Service
-// PROGRAM characteristic
-typedef uint8_t program_char_t;
-
-// OFFON characteristic
-typedef uint8_t offon_char_t;
-
-// RGB characteristic
-typedef rgb_t rgb_char_t;
-
-// LIMIT characteristic
-typedef struct {
-    uint8_t lowLimit;
-    uint8_t highLimit;
-} limit_char_t;
 
 // SK6812 LED
 // The colour layout for the SK6812 LED (GRB) differs from the Bluetooth representation (RGB)
@@ -230,15 +206,6 @@ typedef struct led32 {
     uint32_t red;
     uint32_t blue;
 } led32_t;
-
-//
-// LED range control
-//
-typedef struct {
-    limit_char_t red;
-    limit_char_t green;
-    limit_char_t blue;
-} led_range_t;
 
 //
 // SSI initialisation config
@@ -316,6 +283,10 @@ void lss_Resource_Init();
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
 void lss_ProcessPeriodicEvent();
 #endif
+
+#ifdef LAB_5        // LAB_5 - Analogue Input
+void lss_ProcessLightLevelChange();
+#endif /* LAB_5 */
 
 /*********************************************************************
 *********************************************************************/

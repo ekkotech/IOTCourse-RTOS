@@ -49,17 +49,33 @@
 #include "common.h"
 
 /*********************************************************************
+ * TYPEDEFS
+ */
+//
+// Memory layout of characteristic data
+//
+// LED String Service
+// PROGRAM characteristic
+typedef uint8_t program_char_t;
+
+// OFFON characteristic
+typedef uint8_t offon_char_t;
+
+// RGB characteristic
+typedef struct rgb_char {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+} rgb_char_t;
+
+/*********************************************************************
  * CONSTANTS
  */
 
 //
-// Pairing state definitions
-// LSS_SERVICE is responsible for forcing pairing/bonding
-//
-#define PAIRING_NOT_STARTED         0x00
-#define PAIRING_STARTED             0x01
-#define PAIRING_COMPLETE            0x02
-#define BONDING_COMPLETE            0x04
+// LAB_6 - Pairing and Bonding
+// Add pairing state for "pairing not started"
+#define PAIRING_NOT_STARTED         0xFF
 
 //
 // Default values for characteristics
@@ -81,18 +97,14 @@
 // LED String Switch Characteristic defines
 #define LSS_OFFON_ID                0
 #define LSS_OFFON_UUID              0x0101
-#define LSS_OFFON_LEN               1
-#define LSS_OFFON_LEN_MIN           1
+#define LSS_OFFON_LEN               sizeof(offon_char_t)
+#define LSS_OFFON_LEN_MIN           sizeof(offon_char_t)
 
 // LED String RGB Characteristic defines
 #define LSS_RGB_ID                  1
 #define LSS_RGB_UUID                0x0102
-#define LSS_RGB_LEN                 3
-#define LSS_RGB_LEN_MIN             3
-
-/*********************************************************************
- * TYPEDEFS
- */
+#define LSS_RGB_LEN                 sizeof(rgb_char_t)
+#define LSS_RGB_LEN_MIN             sizeof(rgb_char_t)
 
 /*********************************************************************
  * MACROS

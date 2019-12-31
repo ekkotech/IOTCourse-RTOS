@@ -160,6 +160,17 @@ snv_config_t gSnvState = { .offOn = 0,
 
 #endif /* LAB_4 */
 
+#ifdef LAB_5        // LAB_5 - Analogue Input
+uint8_t gShouldIlluminate = false;
+#endif /* LAB_5 */
+
+#ifdef LAB_6        // LAB_6 - Pairing and Bonding
+// Current pair/bond state of the central-peripheral connection
+// PAIRING_NOT_STARTED - defined in lss_service.h as the initial state
+// All other states use the GAP Bond Manager pre-defined states (defined in gapbondmgr.h)
+uint8_t gPairingState = PAIRING_NOT_STARTED;
+#endif
+
 //
 // Original Project Zero code has these declared as local variables
 // Need to promote up to global in order to access across the app
@@ -645,9 +656,16 @@ static void ProjectZero_init( void )
     // ******************************************************************
     uint32_t passkey = 0; // passkey "000000"
     uint8_t pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
+
+#ifdef LAB_6        // LAB_6 - Pairing and Bonding
+    uint8_t mitm = xxx
+    uint8_t ioCap = yyy
+    uint8_t bonding = zzz
+#else
     uint8_t mitm = TRUE;
     uint8_t ioCap = GAPBOND_IO_CAP_DISPLAY_ONLY;
-    uint8_t bonding = TRUE;
+    uint8_t bonding = FALSE;
+#endif /* LAB_6 */
 
     GAPBondMgr_SetParameter(GAPBOND_DEFAULT_PASSCODE, sizeof(uint32_t),
                             &passkey);
@@ -831,10 +849,19 @@ static void ProjectZero_taskFxn( UArg a0, UArg a1 )
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
             // LAB_4_TODO_2
+            // LAB_5_TODO
 
             // Insert event handling code here
 
 #endif /* LAB_4 */
+
+#ifdef LAB_5        // LAB_5 - Analogue Input
+            
+            // LAB_5_TODO
+            // Insert light level handling code here
+
+#endif /* LAB_5 */
+
         }
     }
 }
@@ -1541,16 +1568,30 @@ static void user_gapBondMgr_pairStateCB( uint16_t connHandle, uint8_t state,
     if (state == GAPBOND_PAIRING_STATE_STARTED)
     {
         Log_info0("Pairing started");
+        // LAB_6 - Pairing and Bonding add global state update here
     }
     else if (state == GAPBOND_PAIRING_STATE_COMPLETE)
     {
         if (status == SUCCESS)
         {
             Log_info0("Pairing completed successfully.");
+            // LAB_6 - Pairing and Bonding add global state update here
         }
         else
         {
             Log_error1("Pairing failed. Error: %02x", status);
+        }
+    }
+    else if (state == GAPBOND_PAIRING_STATE_BOND_SAVED)
+    {
+        if (status == SUCCESS)
+        {
+            Log_info0("Bond info saved to NV");
+            // LAB_6 - Pairing and Bonding add global state update here
+        }
+        else
+        {
+            Log_error1("Saving bond info to NV failed. Error: %02x", status);
         }
     }
     else if (state == GAPBOND_PAIRING_STATE_BONDED)
@@ -1558,6 +1599,10 @@ static void user_gapBondMgr_pairStateCB( uint16_t connHandle, uint8_t state,
         if (status == SUCCESS)
         {
             Log_info0("Re-established pairing from stored bond info.");
+            // LAB_6 - Pairing and Bonding add global state update here
+        }
+        else {
+            Log_error1("Bonding re-establishment failed. Error: %02x", status);
         }
     }
 }

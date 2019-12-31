@@ -146,13 +146,6 @@ static uint8_t isFirstEvent = true;
 
 #endif /* LAB_4  */
 
-//
-// Indicates if light level is currently below off/on threshold
-//
-#ifdef LAB_5        // LAB_5 - Analogue Input
-static bool isBelowLMThreshold = false;
-#endif /* LAB_5 */
-
 /*********************************************************************
  * PUBLIC FUNCTIONS
  */
@@ -164,6 +157,10 @@ void user_LssService_ValueChangeHandler( char_data_t *pCharData );
 void lss_Hardware_Init();
 void lss_Resource_Init();
 #endif /* LAB_3 */
+
+#ifdef LAB_5        // LAB_5 - Analogue Input
+void lss_ProcessLightLevelChange();
+#endif /* LAB_5 */
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -193,9 +190,7 @@ static void updateSnvState( uint8_t charId, uint16_t len, uint8_t *pData );
 #endif /* LAB_4 */
 
 #ifdef LAB_5        // LAB_5 - Analogue Input
-static void startProgram(uint8_t program);
-static void stopProgram(uint8_t program);
-static void checkLuminanceThreshold();
+static bool canModifyLeds();
 #endif /* LAB_5 */
 
 /*********************************************************************
@@ -298,11 +293,31 @@ void lss_ProcessPeriodicEvent()
     Log_info0("In lss_ProcessPeriodicEvent");
 
     // LAB_4_TODO_3
+    // LAB_5_TODO
     
     // Insert handler code here
 
 }
 #endif /* LAB_4 */
+
+#ifdef LAB_5        // LAB_5 - Analogue Input
+/*
+ * @fn      lss_ProcessLightLevelChange
+ *
+ * @brief   Updates the LED off/on state if needed
+ *
+ * @param   none
+ *
+ * @return  none
+ *
+ */
+void lss_ProcessLightLevelChange()
+{
+    // Insert light level change code here
+    // Only need to consider light level changes if master LED and LM off/on switches are on
+
+}
+#endif /* LAB_5 */
 
 /******************************************************************************
  *****************************************************************************
@@ -334,6 +349,7 @@ static void processOffOnValueChange( char_data_t *pCharData )
     if (pCharData->dataLen == sizeof(offon_char_t))
     {
         // LAB_4_TODO_3
+        // LAB_5_TODO
 
         // Insert handler code here
 
@@ -362,6 +378,7 @@ static void processRGBValueChange( char_data_t *pCharData )
     {
         // LAB_3_TODO_7
         // LAB_4_TODO_3
+        // LAB_5_TODO
         
         // Insert handler code here
  
@@ -680,102 +697,33 @@ static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
 #endif /* LAB_4 */
 
 #ifdef LAB_5        // LAB_5 - Analogue Input
-/*
- * @fn      checkLuminanceThreshold
- *
- * @brief   Updates characteristics values after a read from SNV
- *
- * @param   pState - pointer to the in-memory SNV state
- *
- * @return  none
- */
-static void checkLuminanceThreshold()
-{
-
-    uint16_t currentValue = 0;
-    uint16_t currentValueLen = ALS_LUMIN_LEN;
-
-    AlsService_GetParameter( ALS_LUMIN_ID, &currentValueLen, &currentValue);
-
-    if ( currentValue <= snvState.lmThreshold && !isBelowLMThreshold )
-    {
-        // Light level has fallen below lower threshold
-        if ( snvState.offOn && snvState.lmOffOn)
-        {
-            // Set LEDs on
-            startProgram(snvState.program);
-        }
-        isBelowLMThreshold = true;
-    }
-    else if ( currentValue >= (snvState.lmThreshold * (1 + ((float)snvState.lmHysteresis / 100)) ) )
-    {
-        // Light level has risen above upper threshold
-        if ( snvState.offOn && snvState.lmOffOn )
-        {
-            // Set LEDs off
-            stopProgram(snvState.program);
-            bulkUpdateLeds( &ledsOff );
-            writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
-        }
-        isBelowLMThreshold = false;
-    }
-    // No change if light level is between low and high thresholds
-}
-#endif /* LAB_5 */
-
-/*********************************************************************
- * @fn      startProgram
- *
- * @brief   Initialises and starts a program
- *
- * @param   program - identifier for the program
- *
- * @return  none
- */
-#ifdef LAB_5        // LAB_5 - Analogue Input
-static void startProgram(uint8_t program)
-{
-
-    switch (program)
-    {
-        case RGB_SLIDER:
-        {
-            bulkUpdateLeds( snvState.offOn == ON ? &snvState.colour : &ledsOff );
-            writeLeds(hDmaCompleteSema, LSS_DEFAULT_PEND_TIMEOUT_MS);
-            break;
-        }
-        default:
-        Log_info0("WARNING: lssStartProgram: Invalid program id");
-        break;
-    }
-}
-#endif /* LAB_5 */
 
 /*
- * @fn      stopProgram
+ * @fn      updateSnvState
  *
- * @brief   Stops a program, freeing any resources, halting timers etc.
+ * @brief   Updates an element in snvState and sets dirty flag true
  *
- * @param   program - identifier for the program
+ * @param   charId - the characteristic ID
+ * @param   len - the number of bytes to write
+ * @param   pData - pointer to the source data
  *
  * @return  none
  */
-#ifdef LAB_5        // LAB_5 - Analogue Input
-static void stopProgram(uint8_t program)
+static bool canModifyLeds()
 {
 
-    switch (program)
+    if ((gSnvState.offOn == ON) && (gSnvState.lmOffOn == OFF || (gSnvState.lmOffOn == ON && gShouldIlluminate == true)))
     {
-        case RGB_SLIDER:
-        // Nothing needed here
-        break;
-        default:
-        Log_info0("WARNING: lssStopProgram: Invalid program id");
-        break;
+        return true;
     }
-}
-#endif /* LAB_5 */
+    else
+    {
+        return false;
+    }
 
+}
+
+#endif /* LAB_5 */
 
 #ifdef USE_GPRAM
 /*********************************************************************

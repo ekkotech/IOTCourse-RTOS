@@ -49,14 +49,33 @@
 #include <bcomdef.h>
 
 /*********************************************************************
+ * TYPEDEFS
+ */
+//
+// Memory layout of characteristic data
+//
+// Ambient Light Service
+// LMLUMIN characteristic
+typedef uint16_t lumin_char_t;
+
+// LMTHRESH characteristic
+typedef uint16_t thresh_char_t;
+
+// LMHYST characteristic
+typedef uint8_t hyst_char_t;
+
+// LMOFFON characteristics
+typedef uint8_t lmoffon_char_t;
+
+/*********************************************************************
  * CONSTANTS
  */
 
 //
 // Default values for characteristics
 //
-#define ALS_DEFAULT_LMTHRESH        50          // Lux
-#define ALS_DEFAULT_LMHYST          10          // Percent
+#define ALS_DEFAULT_THRESH          50          // Lux
+#define ALS_DEFAULT_HYST            5           // Abs value
 #define ALS_DEFAULT_LMOFFON         1           // On
 
 //
@@ -71,30 +90,26 @@
 // ALS Luminance Characteristic defines
 #define ALS_LUMIN_ID                0
 #define ALS_LUMIN_UUID              0x0201
-#define ALS_LUMIN_LEN               2      // 16-bits representing ADC reading
-#define ALS_LUMIN_LEN_MIN           2
+#define ALS_LUMIN_LEN               sizeof(lumin_char_t)      // 16-bits representing ADC reading
+#define ALS_LUMIN_LEN_MIN           sizeof(lumin_char_t)
 
 // Light Monitor Threshold
-#define ALS_LMTHRESH_ID             1
-#define ALS_LMTHRESH_UUID           0x0202
-#define ALS_LMTHRESH_LEN            2
-#define ALS_LMTHRESH_LEN_MIN        2
+#define ALS_THRESH_ID               1
+#define ALS_THRESH_UUID             0x0202
+#define ALS_THRESH_LEN              sizeof(thresh_char_t)
+#define ALS_THRESH_LEN_MIN          sizeof(thresh_char_t)
 
 // Light Monitor Hysteresis
-#define ALS_LMHYST_ID               2
-#define ALS_LMHYST_UUID             0x0203
-#define ALS_LMHYST_LEN              1
-#define ALS_LMHYST_LEN_MIN          1
+#define ALS_HYST_ID                 2
+#define ALS_HYST_UUID               0x0203
+#define ALS_HYST_LEN                sizeof(hyst_char_t)
+#define ALS_HYST_LEN_MIN            sizeof(hyst_char_t)
 
 // Light Monitor Off/On
 #define ALS_LMOFFON_ID              3
 #define ALS_LMOFFON_UUID            0x0204
-#define ALS_LMOFFON_LEN             1
-#define ALS_LMOFFON_LEN_MIN         1
-
-/*********************************************************************
- * TYPEDEFS
- */
+#define ALS_LMOFFON_LEN             sizeof(lmoffon_char_t)
+#define ALS_LMOFFON_LEN_MIN         sizeof(lmoffon_char_t)
 
 /*********************************************************************
  * MACROS

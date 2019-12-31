@@ -65,20 +65,6 @@ extern "C"
 /*********************************************************************
  * TYPEDEFS
  */
-//
-// Ambient Light Sensor characteristics
-// -------
-// LUMIN characteristic
-typedef uint16_t lumin_char_t;
-
-// LMTHRESH characteristic
-typedef uint16_t lmthresh_char_t;
-
-// LMHYST characteristic
-typedef uint8_t lmhyst_char_t;
-
-// LMOFFON characteristic
-typedef uint8_t lmoffon_char_t;
 
 /*********************************************************************
  * MACROS
