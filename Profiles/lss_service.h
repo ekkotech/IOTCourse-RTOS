@@ -74,8 +74,7 @@ typedef struct rgb_char {
 
 //
 // LAB_6 - Pairing and Bonding
-// Add pairing state for "pairing not started"
-#define PAIRING_NOT_STARTED         0xFF
+// Add define for "pairing not started"
 
 //
 // Default values for characteristics
