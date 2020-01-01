@@ -166,9 +166,8 @@ uint8_t gShouldIlluminate = false;
 
 #ifdef LAB_6        // LAB_6 - Pairing and Bonding
 // Current pair/bond state of the central-peripheral connection
-// PAIRING_NOT_STARTED - defined in lss_service.h as the initial state
-// All other states use the GAP Bond Manager pre-defined states (defined in gapbondmgr.h)
-uint8_t gPairingState = PAIRING_NOT_STARTED;
+// All states use the GAP Bond Manager pre-defined states (defined in gapbondmgr.h)
+uint8_t gPairingState = GAPBOND_PAIRING_STATE_STARTED;
 #endif
 
 //
