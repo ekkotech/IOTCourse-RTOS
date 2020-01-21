@@ -79,16 +79,16 @@ CONST uint8_t als_LUMINUUID[ATT_UUID_SIZE] =
   ALS_BASE128_UUID(ALS_LUMIN_UUID)
 };
 
-// LMTHRESH
-CONST uint8_t als_LMTHRESHUUID[ATT_UUID_SIZE] =
+// THRESH
+CONST uint8_t als_THRESHUUID[ATT_UUID_SIZE] =
 {
-    ALS_BASE128_UUID(ALS_LMTHRESH_UUID)
+    ALS_BASE128_UUID(ALS_THRESH_UUID)
 };
 
-// LMHYST
-CONST uint8_t als_LMHYSTUUID[ATT_UUID_SIZE] =
+// HYST
+CONST uint8_t als_HYSTUUID[ATT_UUID_SIZE] =
 {
-    ALS_BASE128_UUID(ALS_LMHYST_UUID)
+    ALS_BASE128_UUID(ALS_HYST_UUID)
 };
 
 // LMOFFON
@@ -126,30 +126,30 @@ static uint16_t als_LUMINValLen = ALS_LUMIN_LEN_MIN;
 // Characteristic "LUMINANCE" User Description
 static uint8_t als_LUMINUserDesc[10] = "Luminance\0";
 
-// Characteristic "LMTHRESH" Properties (for declaration)
-static uint8_t als_LMTHRESHProps = GATT_PROP_READ | GATT_PROP_WRITE | GATT_PROP_WRITE_NO_RSP;
+// Characteristic "THRESH" Properties (for declaration)
+static uint8_t als_THRESHProps = GATT_PROP_READ | GATT_PROP_WRITE | GATT_PROP_WRITE_NO_RSP;
 
-// Characteristic "LMTHRESH" Value variable
-static uint8_t als_LMTHRESHVal[ALS_LMTHRESH_LEN] = { ALS_DEFAULT_LMTHRESH };
+// Characteristic "THRESH" Value variable
+static uint8_t als_THRESHVal[ALS_THRESH_LEN] = { ALS_DEFAULT_THRESH };
 
-// Length of data in characteristic "LMTHRESH" Value variable, initialised to minimum size
-static uint16_t als_LMTHRESHValLen = ALS_LMTHRESH_LEN_MIN;
+// Length of data in characteristic "THRESH" Value variable, initialised to minimum size
+static uint16_t als_THRESHValLen = ALS_THRESH_LEN_MIN;
 
-// Characteristic "LMTHRESH" User Description
-static uint8_t als_LMTHRESHUserDesc[24] = "Light Monitor Threshold\0";
+// Characteristic "THRESH" User Description
+static uint8_t als_THRESHUserDesc[24] = "Light Monitor Threshold\0";
 
 
-// Characteristic "LMHYST" Properties (for declaration)
-static uint8_t als_LMHYSTProps = GATT_PROP_READ | GATT_PROP_WRITE | GATT_PROP_WRITE_NO_RSP;
+// Characteristic "HYST" Properties (for declaration)
+static uint8_t als_HYSTProps = GATT_PROP_READ | GATT_PROP_WRITE | GATT_PROP_WRITE_NO_RSP;
 
-// Characteristic "LMHYST" Value variable
-static uint8_t als_LMHYSTVal[ALS_LMHYST_LEN] = { ALS_DEFAULT_LMHYST };
+// Characteristic "HYST" Value variable
+static uint8_t als_HYSTVal[ALS_HYST_LEN] = { ALS_DEFAULT_HYST };
 
-// Length of data in characteristic "LMHYST" Value variable, initialised to minimum size
-static uint16_t als_LMHYSTValLen = ALS_LMHYST_LEN_MIN;
+// Length of data in characteristic "HYST" Value variable, initialised to minimum size
+static uint16_t als_HYSTValLen = ALS_HYST_LEN_MIN;
 
-// Characteristic "LMHYST" User Description
-static uint8_t als_LMHYSTUserDesc[25] = "Light Monitor Hysteresis\0";
+// Characteristic "HYST" User Description
+static uint8_t als_HYSTUserDesc[25] = "Light Monitor Hysteresis\0";
 
 
 // Characteristic "LMOFFON" Properties (for declaration)
@@ -208,49 +208,49 @@ static gattAttribute_t AlsServiceAttrTbl[] = {
         als_LUMINUserDesc
     },
 
-    // LMTHRESH Characteristic declaration
+    // THRESH Characteristic declaration
     {
         { ATT_BT_UUID_SIZE, characterUUID },
         GATT_PERMIT_READ,
         0,
-        &als_LMTHRESHProps
+        &als_THRESHProps
     },
-    // LMTHRESH Characteristic Value
+    // THRESH Characteristic Value
     {
-        { ATT_UUID_SIZE, als_LMTHRESHUUID },
+        { ATT_UUID_SIZE, als_THRESHUUID },
         GATT_PERMIT_READ | GATT_PERMIT_WRITE,
         0,
-        als_LMTHRESHVal
+        als_THRESHVal
     },
-    // LMTHRESH Characteristic User Description
+    // THRESH Characteristic User Description
     {
         { ATT_BT_UUID_SIZE, charUserDescUUID },
         GATT_PERMIT_READ,
         0,
-        als_LMTHRESHUserDesc
+        als_THRESHUserDesc
     },
 
     //
-    // LMHYST Characteristic declaration
+    // HYST Characteristic declaration
     {
         { ATT_BT_UUID_SIZE, characterUUID },
         GATT_PERMIT_READ,
         0,
-        &als_LMHYSTProps
+        &als_HYSTProps
     },
-    // LMHYST Characteristic Value
+    // HYST Characteristic Value
     {
-        { ATT_UUID_SIZE, als_LMHYSTUUID },
+        { ATT_UUID_SIZE, als_HYSTUUID },
         GATT_PERMIT_READ | GATT_PERMIT_WRITE,
         0,
-        als_LMHYSTVal
+        als_HYSTVal
     },
-    // LMHYST Characteristic User Description
+    // HYST Characteristic User Description
     {
         { ATT_BT_UUID_SIZE, charUserDescUUID },
         GATT_PERMIT_READ,
         0,
-        als_LMHYSTUserDesc
+        als_HYSTUserDesc
     },
 
     //
@@ -396,20 +396,20 @@ bStatus_t AlsService_SetParameter( uint8_t param, uint16_t len, void *value )
         Log_info2("SetParameter : %s len: %d", (IArg)"LUMINANCE", (IArg)len);
         break;
 
-    case ALS_LMTHRESH_ID:
-        pAttrVal = als_LMTHRESHVal;
-        pValLen = &als_LMTHRESHValLen;
-        valMinLen = ALS_LMTHRESH_LEN_MIN;
-        valMaxLen = ALS_LMTHRESH_LEN;
-        Log_info2("SetParameter : %s len: %d", (IArg)"LMTHRESH", (IArg)len);
+    case ALS_THRESH_ID:
+        pAttrVal = als_THRESHVal;
+        pValLen = &als_THRESHValLen;
+        valMinLen = ALS_THRESH_LEN_MIN;
+        valMaxLen = ALS_THRESH_LEN;
+        Log_info2("SetParameter : %s len: %d", (IArg)"THRESH", (IArg)len);
         break;
 
-    case ALS_LMHYST_ID:
-        pAttrVal = als_LMHYSTVal;
-        pValLen = &als_LMHYSTValLen;
-        valMinLen = ALS_LMHYST_LEN_MIN;
-        valMaxLen = ALS_LMHYST_LEN;
-        Log_info2("SetParameter : %s len: %d", (IArg)"LMHYST", (IArg)len);
+    case ALS_HYST_ID:
+        pAttrVal = als_HYSTVal;
+        pValLen = &als_HYSTValLen;
+        valMinLen = ALS_HYST_LEN_MIN;
+        valMaxLen = ALS_HYST_LEN;
+        Log_info2("SetParameter : %s len: %d", (IArg)"HYST", (IArg)len);
         break;
 
     case ALS_LMOFFON_ID:
@@ -480,16 +480,16 @@ bStatus_t AlsService_GetParameter( uint8_t param, uint16_t *len, void *value )
         Log_info2("GetParameter : %s returning %d bytes", (IArg)"LUMINANCE", (IArg)*len);
         break;
 
-    case ALS_LMTHRESH_ID:
-        *len = MIN(*len, als_LMTHRESHValLen);
-        memcpy(value, als_LMTHRESHVal, *len);
-        Log_info2("GetParameter : %s returning %d bytes", (IArg)"LMTHRESH", (IArg)*len);
+    case ALS_THRESH_ID:
+        *len = MIN(*len, als_THRESHValLen);
+        memcpy(value, als_THRESHVal, *len);
+        Log_info2("GetParameter : %s returning %d bytes", (IArg)"THRESH", (IArg)*len);
         break;
 
-    case ALS_LMHYST_ID:
-        *len = MIN(*len, als_LMHYSTValLen);
-        memcpy(value, als_LMHYSTVal, *len);
-        Log_info2("GetParameter : %s returning %d bytes", (IArg)"LMHYST", (IArg)*len);
+    case ALS_HYST_ID:
+        *len = MIN(*len, als_HYSTValLen);
+        memcpy(value, als_HYSTVal, *len);
+        Log_info2("GetParameter : %s returning %d bytes", (IArg)"HYST", (IArg)*len);
         break;
 
     case ALS_LMOFFON_ID:
@@ -532,13 +532,13 @@ static uint8_t AlsService_findCharParamId(gattAttribute_t *pAttr)
     else if ( ATT_UUID_SIZE == pAttr->type.len && !memcmp(pAttr->type.uuid, als_LUMINUUID, pAttr->type.len))
         return ALS_LUMIN_ID;
 
-    // Is this attribute in "LMTHRESH"?
-    else if ( ATT_UUID_SIZE == pAttr->type.len && !memcmp(pAttr->type.uuid, als_LMTHRESHUUID, pAttr->type.len))
-        return ALS_LMTHRESH_ID;
+    // Is this attribute in "THRESH"?
+    else if ( ATT_UUID_SIZE == pAttr->type.len && !memcmp(pAttr->type.uuid, als_THRESHUUID, pAttr->type.len))
+        return ALS_THRESH_ID;
 
-    // Is this attribute in "LMHYST"?
-    else if ( ATT_UUID_SIZE == pAttr->type.len && !memcmp(pAttr->type.uuid, als_LMHYSTUUID, pAttr->type.len))
-        return ALS_LMHYST_ID;
+    // Is this attribute in "HYST"?
+    else if ( ATT_UUID_SIZE == pAttr->type.len && !memcmp(pAttr->type.uuid, als_HYSTUUID, pAttr->type.len))
+        return ALS_HYST_ID;
 
     // Is this attribute in "LMOFFON"?
     else if ( ATT_UUID_SIZE == pAttr->type.len && !memcmp(pAttr->type.uuid, als_LMOFFONUUID, pAttr->type.len))
@@ -582,12 +582,12 @@ static bStatus_t AlsService_ReadAttrCB( uint16_t connHandle, gattAttribute_t *pA
         /* Other considerations for LUMINANCE can be inserted here */
         break;
 
-    case ALS_LMTHRESH_ID:
-        valueLen = als_LMTHRESHValLen;
+    case ALS_THRESH_ID:
+        valueLen = als_THRESHValLen;
         break;
 
-    case ALS_LMHYST_ID:
-        valueLen = als_LMHYSTValLen;
+    case ALS_HYST_ID:
+        valueLen = als_HYSTValLen;
         break;
 
     case ALS_LMOFFON_ID:
@@ -667,16 +667,16 @@ static bStatus_t AlsService_WriteAttrCB( uint16_t connHandle, gattAttribute_t *p
     switch ( paramID )
     {
 
-    case ALS_LMTHRESH_ID:
-        writeLenMin  = ALS_LMTHRESH_LEN_MIN;
-        writeLenMax  = ALS_LMTHRESH_LEN;
-        pValueLenVar = &als_LMTHRESHValLen;
+    case ALS_THRESH_ID:
+        writeLenMin  = ALS_THRESH_LEN_MIN;
+        writeLenMax  = ALS_THRESH_LEN;
+        pValueLenVar = &als_THRESHValLen;
         break;
 
-    case ALS_LMHYST_ID:
-        writeLenMin  = ALS_LMHYST_LEN_MIN;
-        writeLenMax  = ALS_LMHYST_LEN;
-        pValueLenVar = &als_LMHYSTValLen;
+    case ALS_HYST_ID:
+        writeLenMin  = ALS_HYST_LEN_MIN;
+        writeLenMax  = ALS_HYST_LEN;
+        pValueLenVar = &als_HYSTValLen;
         break;
 
     case ALS_LMOFFON_ID:
