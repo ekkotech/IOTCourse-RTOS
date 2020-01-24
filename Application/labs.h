@@ -67,11 +67,11 @@ extern "C"
 #ifdef      LAB_3
 //#define     LAB_4       // Un-comment to include source for Lab 4 - Non-Volatile Memory
 #ifdef      LAB_4
-//#define     LAB_5       // Un-comment to include source for Lab 5 - Light Monitor implementation
+//#define     LAB_5       // Un-comment to include source for Lab 5 - Analogue Input
 #ifdef      LAB_5
-//#define     LAB_6       // Un-comment to include source for Lab 6 - Random Fader Implementation
+//#define     LAB_6       // Un-comment to include source for Lab 6 - Pairing and Bonding
 #ifdef      LAB_6
-//#define     LAB_7       // Un-comment to include source for Lab 7 - Pairing and Bonding
+//#define     LAB_7       // Un-comment to include source for Lab 7 - 
 #ifdef      LAB_7
 #endif /* LAB_7 */
 #endif /* LAB_6 */
