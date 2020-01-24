@@ -65,8 +65,8 @@ extern "C"
 typedef struct snv_config {
     offon_char_t        offOn;
     rgb_char_t          colour;
-    hyst_char_t         lmHyst;
-    thresh_char_t       lmThresh;
+    hyst_char_t         hyst;
+    thresh_char_t       thresh;
     lmoffon_char_t      lmOffOn;
 } snv_config_t;
 

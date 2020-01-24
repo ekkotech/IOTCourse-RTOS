@@ -92,8 +92,8 @@ void als_ProcessPeriodicEvent();
  * LOCAL FUNCTIONS
  */
 #ifdef LAB_2        // LAB_2 - Service Configuration
-static void processLMThresholdValueChange(char_data_t *pCharData);
-static void processLMHysteresisValueChange(char_data_t *pCharData);
+static void processThresholdValueChange(char_data_t *pCharData);
+static void processHysteresisValueChange(char_data_t *pCharData);
 static void processLMOffOnValueChange(char_data_t *pCharData);
 static void processLuminCfgChange(char_data_t *pCharDate);
 #endif /* LAB_2 */
@@ -190,12 +190,12 @@ void user_AlsService_ValueChangeHandler(char_data_t *pCharData)
 
   switch (pCharData->paramID)
   {
-    case ALS_LMTHRESH_ID:
-      processLMThresholdValueChange(pCharData);
+    case ALS_THRESH_ID:
+      processThresholdValueChange(pCharData);
       break;
 
-    case ALS_LMHYST_ID:
-      processLMHysteresisValueChange(pCharData);
+    case ALS_HYST_ID:
+      processHysteresisValueChange(pCharData);
       break;
 
     case ALS_LMOFFON_ID:
@@ -249,20 +249,20 @@ void user_AlsService_CfgChangeHandler(char_data_t *pCharData)
 }
 
 /*
- * @fn      processLMThresholdValueChange
+ * @fn      processThresholdValueChange
  *
- * @brief   Process a LMTHRESH characteristic value change
+ * @brief   Process a THRESH characteristic value change
  *
  * @param   pCharData  Pointer to the characteristic data
  *
  * @return  None.
  */
-static void processLMThresholdValueChange(char_data_t *pCharData)
+static void processThresholdValueChange(char_data_t *pCharData)
 {
-    Log_info0("In processLMThresholdValueChange");
+    Log_info0("In processThresholdValueChange");
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-    if (pCharData->dataLen == sizeof(lmthresh_char_t))
+    if (pCharData->dataLen == sizeof(thresh_char_t))
     {
         updateSnvState(pCharData->paramID, pCharData->dataLen, pCharData->data);
     }
@@ -271,20 +271,20 @@ static void processLMThresholdValueChange(char_data_t *pCharData)
 }
 
 /*
- * @fn      processLMHysteresisValueChange
+ * @fn      processHysteresisValueChange
  *
- * @brief   Process a LMHYST characteristic value change
+ * @brief   Process a HYST characteristic value change
  *
  * @param   pCharData  Pointer to the characteristic data
  *
  * @return  None.
  */
-static void processLMHysteresisValueChange(char_data_t *pCharData)
+static void processHysteresisValueChange(char_data_t *pCharData)
 {
-    Log_info0("In processLMHysteresisValueChange");
+    Log_info0("In processHysteresisValueChange");
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-    if (pCharData->dataLen == sizeof(lmhyst_char_t))
+    if (pCharData->dataLen == sizeof(hyst_char_t))
     {
         updateSnvState(pCharData->paramID, pCharData->dataLen, pCharData->data);
     }
@@ -306,7 +306,7 @@ static void processLMOffOnValueChange(char_data_t *pCharData)
     Log_info0("In processLMOffOnValueChange");
 
 #ifdef LAB_4        // LAB_4 - Non-Volatile Memory
-    if (pCharData->dataLen == sizeof(lmhyst_char_t))
+    if (pCharData->dataLen == sizeof(hyst_char_t))
     {
         updateSnvState(pCharData->paramID, pCharData->dataLen, pCharData->data);
     }
@@ -421,9 +421,9 @@ static void updateSnvState(uint8_t charId, uint16_t len, uint8_t *pData)
 {
     // Insert handler code here
     switch (charId) {
-        case ALS_LMTHRESH_ID:
+        case ALS_THRESH_ID:
             break;
-        case ALS_LMHYST_ID:
+        case ALS_HYST_ID:
             break;
         case ALS_LMOFFON_ID:
             break;
