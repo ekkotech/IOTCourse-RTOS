@@ -1567,14 +1567,12 @@ static void user_gapBondMgr_pairStateCB( uint16_t connHandle, uint8_t state,
     if (state == GAPBOND_PAIRING_STATE_STARTED)
     {
         Log_info0("Pairing started");
-        // LAB_6 - Pairing and Bonding add global state update here
     }
     else if (state == GAPBOND_PAIRING_STATE_COMPLETE)
     {
         if (status == SUCCESS)
         {
             Log_info0("Pairing completed successfully.");
-            // LAB_6 - Pairing and Bonding add global state update here
         }
         else
         {
