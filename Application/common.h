@@ -68,7 +68,7 @@ extern uint8_t gPairingState;
  */
 
 // Global event IDs
-#define APP_LUMINANCE_CHANGE_EVT    Event_Id_29
+#define APP_LUMINANCE_CHANGE_EVT    Event_Id_04
 
 //
 // Debug logging levels
